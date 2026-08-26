@@ -1,0 +1,106 @@
+{
+  "_metadata": {
+    "currency": "INR",
+    "primary_cpc_source": "nicodigital.com — India Google Search benchmarks, 2026",
+    "linkedin_india_cpc": "No verified India-specific LinkedIn CPC found. Global average is $5.74 (~₹480). Manufacturing/BFSI LinkedIn CPC is a calibrated estimate, NOT researched.",
+    "ctr_note": "No India-specific CTR-by-industry source found. Values are estimated from platform-level benchmarks: Google Search India 4.5–7%; Meta India 1.5–2.5%; LinkedIn global 0.44–0.65%. Do not treat as verified market research.",
+    "customer_spend_note": "Spend ranges in customer_profiles_gen.py are modeled estimates. No publicly verified India-vertical-specific LTV dataset was found.",
+    "attribution_note": "Linear attribution_weight is a modeling choice for ML training neutrality, NOT an India market benchmark claim."
+  },
+  "bfsi": {
+    "ctr": 0.020,
+    "ctr_source": "unverified_estimate — blended from Meta India (~2%) and Google Search India (4.5–7%); BFSI skews search-heavy",
+    "cpc": 290.0,
+    "cpc_range_inr": [200, 380],
+    "cpc_source": "verified — nicodigital.com 2026, bucketed with education/B2B software/real estate",
+    "conversion_rate": 0.025,
+    "conversion_rate_source": "unverified_estimate — no India-specific BFSI conversion rate source found; 3–8% cited globally for optimised landing pages",
+    "avg_conversion_value": 15000,
+    "avg_conversion_value_source": "unverified_estimate — modeled as credit card/loan lead early-life value",
+    "compliance_notes": "Never surface or amplify unverified financial advice or scam-adjacent content; flag anything resembling investment promises.",
+    "seasonality": {
+      "1": 1.40, "2": 1.30, "3": 1.35, "4": 0.90, "5": 0.85, "6": 0.80,
+      "7": 0.80, "8": 0.85, "9": 0.90, "10": 0.95, "11": 1.00, "12": 1.10
+    }
+  },
+  "insurance": {
+    "ctr": 0.009,
+    "ctr_source": "unverified_estimate — insurance is a saturated/low-CTR vertical; estimated from Meta India lower-band (~0.8–1.0%)",
+    "cpc": 355.0,
+    "cpc_range_inr": [250, 460],
+    "cpc_source": "verified — nicodigital.com 2026, explicitly cited as most expensive alongside lending",
+    "conversion_rate": 0.015,
+    "conversion_rate_source": "unverified_estimate — no India insurance-specific conversion rate source found",
+    "avg_conversion_value": 22000,
+    "avg_conversion_value_source": "unverified_estimate — modeled as first-year premium for a term/health policy",
+    "compliance_notes": "Treat claims settlement sentiment carefully. Insurance is a regulated advice category; flag unverified policy advice.",
+    "seasonality": {
+      "1": 1.35, "2": 1.25, "3": 1.20, "4": 0.90, "5": 0.85, "6": 0.80,
+      "7": 0.80, "8": 0.85, "9": 0.95, "10": 1.00, "11": 1.20, "12": 1.35
+    }
+  },
+  "rcg": {
+    "ctr": 0.032,
+    "ctr_source": "unverified_estimate — fashion/ecommerce on Meta India typically 3–5%; conservative mid-band used",
+    "cpc": 14.0,
+    "cpc_range_inr": [3, 25],
+    "cpc_source": "verified — nicodigital.com 2026, directly cited: 'fashion ecommerce ₹3... ecommerce/retail ₹3–25'",
+    "conversion_rate": 0.045,
+    "conversion_rate_source": "unverified_estimate — India ecommerce conversion rate 1.8–3% (cited globally); 4.5% reflects high-intent festive campaigns",
+    "avg_conversion_value": 1200,
+    "avg_conversion_value_source": "unverified_estimate — above quick-commerce AOV (₹650–850); D2C AOV typically ₹1K–3K",
+    "compliance_notes": "Flag any medical/health claims embedded in product reviews or influencer content.",
+    "seasonality": {
+      "1": 1.10, "2": 0.85, "3": 0.90, "4": 0.90, "5": 0.95, "6": 1.00,
+      "7": 1.20, "8": 0.95, "9": 1.00, "10": 1.40, "11": 1.60, "12": 1.30
+    }
+  },
+  "travel": {
+    "ctr": 0.035,
+    "ctr_source": "unverified_estimate — travel creatives are visually strong; estimated at upper band of Meta India (2.5–3.5%+)",
+    "cpc": 50.0,
+    "cpc_range_inr": [10, 75],
+    "cpc_source": "verified — nicodigital.com 2026, bucketed with 'home services, automotive, most retail'; often below ₹25 off-peak",
+    "conversion_rate": 0.035,
+    "conversion_rate_source": "unverified_estimate — no India travel-specific conversion rate sourced",
+    "avg_conversion_value": 8500,
+    "avg_conversion_value_source": "unverified_estimate — modeled as domestic flight + hotel booking average",
+    "compliance_notes": "Factual safety-incident detection only; no speculation amplification. Lowest compliance risk of the 5 verticals.",
+    "seasonality": {
+      "1": 1.20, "2": 0.90, "3": 0.95, "4": 1.00, "5": 1.35, "6": 1.40,
+      "7": 1.10, "8": 0.90, "9": 0.85, "10": 0.90, "11": 0.95, "12": 1.25
+    }
+  },
+  "healthcare": {
+    "ctr": 0.025,
+    "ctr_source": "unverified_estimate — healthcare skews organic search; estimated at mid-band Google India (2–3%)",
+    "cpc": 130.0,
+    "cpc_range_inr": [50, 210],
+    "cpc_source": "verified — nicodigital.com 2026, bucketed with legal/professional services",
+    "conversion_rate": 0.020,
+    "conversion_rate_source": "unverified_estimate — no India healthcare-specific ad conversion rate sourced",
+    "avg_conversion_value": 4500,
+    "avg_conversion_value_source": "unverified_estimate — modeled as OPD consultation + diagnostics package",
+    "compliance_notes": "Highest compliance bar — must flag unverified medical claims and misinformation; never amplify patient speculation.",
+    "seasonality": {
+      "1": 1.30, "2": 1.20, "3": 1.00, "4": 0.90, "5": 0.85, "6": 0.90,
+      "7": 1.15, "8": 1.20, "9": 1.00, "10": 0.95, "11": 1.00, "12": 1.05
+    }
+  },
+  "manufacturing": {
+    "ctr": 0.0055,
+    "ctr_source": "partially_verified — LinkedIn sponsored content global average 0.44–0.65%; India not separately sourced; global used as proxy",
+    "cpc": 290.0,
+    "cpc_range_inr": [200, 380],
+    "cpc_source": "unverified_estimate — no source names Manufacturing directly; extrapolated from B2B software tier (same long-cycle sales profile) per nicodigital.com 2026",
+    "conversion_rate": 0.010,
+    "conversion_rate_source": "unverified_estimate — B2B manufacturing leads India: ₹800–5000/lead cited; conversion rate derived from CPL model",
+    "avg_conversion_value": 75000,
+    "avg_conversion_value_source": "unverified_estimate — modeled as MQL pipeline entry value for B2B manufacturing contract",
+    "compliance_notes": "Exclusively B2B lead generation. Long sales cycles (3–12 months). Tied to fiscal year-ends and major trade show cycles.",
+    "seasonality": {
+      "1": 0.90, "2": 1.10, "3": 1.30, "4": 0.85, "5": 0.80, "6": 0.85,
+      "7": 0.80, "8": 0.85, "9": 1.20, "10": 1.25, "11": 0.95, "12": 0.90
+    }
+  }
+}

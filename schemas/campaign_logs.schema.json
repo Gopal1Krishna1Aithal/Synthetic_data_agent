@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CampaignLog",
+  "type": "object",
+  "properties": {
+    "campaign_id": {
+      "type": "string",
+      "pattern": "^CAMP-[0-9]{5}$"
+    },
+    "campaign_name": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string",
+      "enum": ["bfsi", "insurance", "rcg", "travel", "healthcare", "manufacturing"]
+    },
+    "budget": {
+      "type": "number",
+      "minimum": 100.0
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Completed", "Active", "Paused"]
+    }
+  },
+  "required": ["campaign_id", "campaign_name", "industry", "budget", "start_date", "end_date", "status"]
+}

@@ -1,0 +1,11 @@
+{
+  "budget_to_impressions": {
+    "base_impressions_per_dollar": 100,
+    "diminishing_returns_exponent": 0.95
+  },
+  "randomness": {
+    "ctr_noise_std_dev": 0.05,
+    "cpc_noise_std_dev": 0.08,
+    "conversion_noise_std_dev": 0.10
+  }
+}

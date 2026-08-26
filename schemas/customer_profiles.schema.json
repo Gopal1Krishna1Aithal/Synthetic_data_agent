@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CustomerProfile",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "pattern": "^CUST-[0-9]{5}$"
+    },
+    "industry": {
+      "type": "string",
+      "enum": ["bfsi", "insurance", "rcg", "travel", "healthcare", "manufacturing"]
+    },
+    "acquisition_channel": {
+      "type": "string",
+      "enum": ["Facebook", "Instagram", "LinkedIn", "Organic_Search", "Referral", "Email"]
+    },
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 18,
+      "maximum": 100
+    },
+    "gender": {
+      "type": "string",
+      "enum": ["Male", "Female", "Non-binary", "Other"]
+    },
+    "segment": {
+      "type": "string",
+      "enum": ["Value", "Mid-Market", "Enterprise", "Consumer"]
+    },
+    "signup_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "total_spend_to_date": {
+      "type": "number",
+      "minimum": 0
+    },
+    "last_purchase_date": {
+      "type": ["string", "null"],
+      "format": "date"
+    }
+  },
+  "required": ["customer_id", "industry", "acquisition_channel", "name", "email", "age", "gender", "segment", "signup_date", "total_spend_to_date", "last_purchase_date"]
+}
