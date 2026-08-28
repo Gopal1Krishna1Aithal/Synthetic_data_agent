@@ -54,10 +54,11 @@ def validate_statistics(campaigns, events, profiles):
                 campaign_stats[cid]["impressions"] += 1
             elif etype == "click":
                 campaign_stats[cid]["clicks"] += 1
-                campaign_stats[cid]["cost"] += evt["cost"]
+                campaign_stats[cid]["cost"]   += evt["cost"]
             elif etype == "conversion":
                 campaign_stats[cid]["conversions"] += 1
-                campaign_stats[cid]["revenue"] += evt["revenue"]
+                campaign_stats[cid]["cost"]        += evt["cost"]    # conversion also consumed a click cost
+                campaign_stats[cid]["revenue"]      += evt["revenue"]
                 
     # Check deviations per industry
     industry_sums = {}
@@ -79,25 +80,44 @@ def validate_statistics(campaigns, events, profiles):
         profile = profiles.get(ind)
         if not profile:
             continue
-            
-        ctr = sums["clicks"] / sums["impressions"] if sums["impressions"] > 0 else 0
-        cpc = sums["cost"] / sums["clicks"] if sums["clicks"] > 0 else 0
-        conv_rate = sums["conversions"] / sums["clicks"] if sums["clicks"] > 0 else 0
-        
-        target_ctr = profile["ctr"]
-        target_cpc = profile["cpc"]
+
+        # ---------------------------------------------------------------
+        # Correct formulas for our mutually-exclusive event model:
+        #
+        #   Event types: impression | click (non-converting) | conversion
+        #
+        #   total_impressions_served = all three event types
+        #     (every event represents one ad shown to a user)
+        #
+        #   CTR  = (click_events + conversion_events) / total_impressions_served
+        #     Conversions consumed a click action, so they count in the numerator.
+        #
+        #   CR   = conversion_events / (click_events + conversion_events)
+        #     Denominator = total click-equivalent interactions, not just non-converting clicks.
+        #
+        #   CPC  = total_cost / total_click_equivalent_events
+        # ---------------------------------------------------------------
+        total_imps    = sums["impressions"]   # already includes all event types
+        click_actions = sums["clicks"] + sums["conversions"]   # total click-equivalent events
+
+        ctr      = click_actions / total_imps if total_imps > 0 else 0
+        cpc      = sums["cost"] / click_actions if click_actions > 0 else 0
+        conv_rate = sums["conversions"] / click_actions if click_actions > 0 else 0
+
+        target_ctr       = profile["ctr"]
+        target_cpc       = profile["cpc"]
         target_conv_rate = profile["conversion_rate"]
-        
-        ctr_dev = abs(ctr - target_ctr) / target_ctr if target_ctr > 0 else 0
-        cpc_dev = abs(cpc - target_cpc) / target_cpc if target_cpc > 0 else 0
+
+        ctr_dev  = abs(ctr  - target_ctr)  / target_ctr  if target_ctr  > 0 else 0
+        cpc_dev  = abs(cpc  - target_cpc)  / target_cpc  if target_cpc  > 0 else 0
         conv_dev = abs(conv_rate - target_conv_rate) / target_conv_rate if target_conv_rate > 0 else 0
-        
+
         report.append({
             "industry": ind,
             "metrics": {
-                "ctr": {"actual": ctr, "target": target_ctr, "deviation": ctr_dev},
-                "cpc": {"actual": cpc, "target": target_cpc, "deviation": cpc_dev},
-                "conversion_rate": {"actual": conv_rate, "target": target_conv_rate, "deviation": conv_dev}
+                "ctr":             {"actual": ctr,       "target": target_ctr,       "deviation": ctr_dev},
+                "cpc":             {"actual": cpc,       "target": target_cpc,       "deviation": cpc_dev},
+                "conversion_rate": {"actual": conv_rate, "target": target_conv_rate, "deviation": conv_dev},
             }
         })
         

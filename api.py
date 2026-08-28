@@ -23,7 +23,9 @@ def write_json(data, path):
 
 def main():
     parser = argparse.ArgumentParser(description="Synthetic Data Agent CLI")
-    parser.add_argument("--industries", nargs="+", default=["retail", "saas", "healthcare"], help="List of industries to generate data for")
+    parser.add_argument("--industries", nargs="+",
+                        default=["bfsi", "insurance", "rcg", "travel", "healthcare", "manufacturing"],
+                        help="List of industries to generate data for")
     parser.add_argument("--num-customers", type=int, default=100, help="Number of customer profiles to generate")
     parser.add_argument("--num-campaigns", type=int, default=10, help="Number of campaign logs to generate")
     parser.add_argument("--output-format", choices=["json", "csv"], default="json", help="Output file format")
@@ -139,7 +141,9 @@ def main():
         write_json(events, os.path.join(out_dir, "engagement_events.json"))
     else:
         cust_fields = ["customer_id", "industry", "acquisition_channel", "name", "email", "age", "gender", "segment", "signup_date", "total_spend_to_date", "last_purchase_date"]
-        camp_fields = ["campaign_id", "campaign_name", "industry", "budget", "start_date", "end_date", "status"]
+        camp_fields = ["campaign_id", "campaign_name", "industry", "budget", "start_date", "end_date",
+                       "status", "target_channel", "campaign_objective", "target_segment",
+                       "creative_type", "target_audience_size"]
         evt_fields = ["event_id", "timestamp", "customer_id", "campaign_id", "event_type", "industry", "attribution_weight", "cost", "revenue"]
         
         write_csv(customers, os.path.join(out_dir, "customer_profiles.csv"), cust_fields)

@@ -2,12 +2,13 @@ import random
 from datetime import datetime, timedelta, date
 
 FIRST_NAMES = ["James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda", "William", "Elizabeth",
-               "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Charles", "Karen"]
-LAST_NAMES = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Wilson",
-              "Martinez", "Anderson", "Taylor", "Thomas", "Hernandez", "Moore", "Martin", "Jackson", "Thompson", "White"]
+               "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Charles", "Karen",
+               "Aarav", "Priya", "Rahul", "Anjali", "Vikram", "Neha", "Rohan", "Pooja", "Arjun", "Divya"]
+LAST_NAMES  = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Wilson",
+               "Sharma", "Verma", "Patel", "Singh", "Kumar", "Mehta", "Nair", "Reddy", "Iyer", "Gupta"]
 # RFC 2606 reserved domains — safe for synthetic/test data, never route to real mailboxes
-DOMAINS = ["example.com", "example.org", "example.net", "mock-domain.test"]
-GENDERS = ["Male", "Female", "Non-binary", "Other"]
+DOMAINS  = ["example.com", "example.org", "example.net", "mock-domain.test"]
+GENDERS  = ["Male", "Female", "Non-binary", "Other"]
 SEGMENTS = ["Value", "Mid-Market", "Enterprise", "Consumer"]
 
 # ---------------------------------------------------------------
@@ -52,6 +53,23 @@ VERTICAL_SPEND_MULTIPLIER = {
 }
 
 # ---------------------------------------------------------------
+# Segment distribution per vertical (must mirror campaign_logs_gen.py SEGMENT_WEIGHTS
+# so that campaign targeting actually reaches the right customer segment mix).
+# Previous bug: random.choice(SEGMENTS) gave equal 25% per segment for ALL verticals,
+# meaning a Manufacturing campaign targeting 45% Enterprise found only 25% Enterprise
+# customers — creating a systematic targeting mismatch that would corrupt the
+# downstream Campaign Performance model's audience-segment signal.
+# ---------------------------------------------------------------
+CUSTOMER_SEGMENT_WEIGHTS = {
+    "bfsi":          {"Enterprise": 0.28, "Mid-Market": 0.37, "Consumer": 0.27, "Value": 0.08},
+    "insurance":     {"Consumer": 0.40,   "Mid-Market": 0.33, "Enterprise": 0.20, "Value": 0.07},
+    "rcg":           {"Consumer": 0.50,   "Value": 0.35,      "Mid-Market": 0.12, "Enterprise": 0.03},
+    "travel":        {"Consumer": 0.47,   "Mid-Market": 0.28, "Value": 0.20,      "Enterprise": 0.05},
+    "healthcare":    {"Consumer": 0.43,   "Mid-Market": 0.32, "Enterprise": 0.18, "Value": 0.07},
+    "manufacturing": {"Enterprise": 0.43, "Mid-Market": 0.40, "Value": 0.12,      "Consumer": 0.05},
+}
+
+# ---------------------------------------------------------------
 # Last purchase recency gaps (in days) from today (Aug 20 2026)
 # Null probability = chance this customer has NEVER purchased.
 # ---------------------------------------------------------------
@@ -91,10 +109,9 @@ def generate_customer_profiles(industry, volume, start_id=1):
     - total_spend_to_date  : driven by segment + vertical multiplier (Churn "M" in RFM)
     - last_purchase_date   : driven by segment recency pattern (Churn "R" in RFM), nullable
     """
-    channel_weights = ACQUISITION_CHANNELS.get(industry, ACQUISITION_CHANNELS["rcg"])
+    channel_weights  = ACQUISITION_CHANNELS.get(industry, ACQUISITION_CHANNELS["rcg"])
     spend_multiplier = VERTICAL_SPEND_MULTIPLIER.get(industry, 1.0)
     customers = []
-    start_date = datetime(2025, 1, 1)
 
     for i in range(volume):
         customer_id = f"CUST-{start_id + i:05d}"
@@ -104,14 +121,21 @@ def generate_customer_profiles(industry, volume, start_id=1):
         email = f"{first_name.lower()}.{last_name.lower()}{random.randint(10, 99)}@{random.choice(DOMAINS)}"
         age = random.randint(18, 75)
         gender = random.choice(GENDERS)
-        segment = random.choice(SEGMENTS)
+
+        # --- segment: industry-weighted distribution ---
+        # Must mirror SEGMENT_WEIGHTS in campaign_logs_gen.py so campaign targeting
+        # finds the correct customer mix (avoids systematic audience mismatch).
+        seg_weights = CUSTOMER_SEGMENT_WEIGHTS.get(industry, {s: 0.25 for s in SEGMENTS})
+        segment = _weighted_choice(seg_weights)
 
         # --- acquisition_channel: vertically-weighted ---
         acquisition_channel = _weighted_choice(channel_weights)
 
-        # --- signup_date: sometime in the last 2 years ---
-        days_ago = random.randint(0, 730)
-        signup_date = (start_date - timedelta(days=days_ago)).date()
+        # --- signup_date: last 2 years up to TODAY ---
+        # Previous bug: was going backwards from datetime(2025,1,1), so no signups
+        # after Jan 2025 — unrealistic for an active customer database.
+        days_ago    = random.randint(0, 730)
+        signup_date = (TODAY - timedelta(days=days_ago))
 
         # --- total_spend_to_date: segment range × vertical multiplier (INR) ---
         lo, hi = SPEND_BY_SEGMENT.get(segment, (500, 15000))

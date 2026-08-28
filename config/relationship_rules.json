@@ -1,8 +1,5 @@
 {
-  "budget_to_impressions": {
-    "base_impressions_per_dollar": 100,
-    "diminishing_returns_exponent": 0.95
-  },
+  "_note": "budget_to_impressions block removed — impressions are now derived directly from budget/CPC/CTR in relationships.py, making this config block dead code. Retained randomness config only.",
   "randomness": {
     "ctr_noise_std_dev": 0.05,
     "cpc_noise_std_dev": 0.08,

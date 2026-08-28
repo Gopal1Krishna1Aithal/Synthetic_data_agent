@@ -2,97 +2,135 @@ import random
 from datetime import datetime, timedelta
 from relationships import calculate_campaign_metrics
 
-def generate_engagement_events(campaigns, customers, profiles, rules, max_events_per_campaign=10000):
+
+def generate_engagement_events(campaigns, customers, profiles, rules, max_events_per_campaign=10_000):
+    """
+    Generate engagement events for each campaign.
+
+    Event model (mutually exclusive per interaction):
+      - impression  : ad shown, user did NOT click
+      - click       : user clicked but did NOT convert
+      - conversion  : user clicked AND converted (one event — not click + conversion)
+
+    This means:
+      CTR  = (click_events + conversion_events) / total_impressions_served
+      CR   = conversion_events / (click_events + conversion_events)
+
+    Customers are scoped to their matching industry to prevent cross-vertical
+    join corruption downstream (e.g. a Manufacturing campaign should never
+    be attributed to a BFSI customer).
+    """
     events = []
     event_counter = 1
-    
+
+    # ---------------------------------------------------------------
+    # Group customers by industry ONCE before the loop.
+    # Prevents O(n) linear scans and guarantees industry isolation.
+    # ---------------------------------------------------------------
+    customers_by_industry = {}
+    for c in customers:
+        customers_by_industry.setdefault(c["industry"], []).append(c)
+
     for campaign in campaigns:
-        metrics = calculate_campaign_metrics(campaign, profiles, rules)
-        
-        # Determine how many events to write to raw logs
-        raw_imps = metrics["impressions"]
-        clicks = metrics["clicks"]
-        conversions = metrics["conversions"]
-        cost = metrics["cost"]
-        revenue = metrics["revenue"]
-        
-        # Calculate event-level cost and revenue
-        cpc = cost / clicks if clicks > 0 else 0
-        rev_per_conv = revenue / conversions if conversions > 0 else 0
-        
-        # Number of impressions that did NOT result in a click or conversion
-        pure_impressions = max(0, raw_imps - clicks - conversions)
-        total_events_intended = pure_impressions + clicks + conversions
-        
+        metrics           = calculate_campaign_metrics(campaign, profiles, rules)
+        raw_imps          = metrics["impressions"]
+        non_conv_clicks   = metrics["non_conv_clicks"]   # clicked but didn't convert
+        conversions       = metrics["conversions"]        # clicked AND converted
+        total_clicks      = metrics["total_clicks"]       # non_conv_clicks + conversions
+        cost              = metrics["cost"]
+        avg_value         = metrics["avg_conversion_value"]
+
+        # Per-click cost (uniform within campaign — variance is at campaign level via noise)
+        cpc = cost / total_clicks if total_clicks > 0 else 0.0
+
+        # pure_impressions = ad shown but not clicked at all
+        # total reach = pure_imps + non_conv_clicks + conversions = raw_imps ✓
+        pure_impressions      = max(0, raw_imps - total_clicks)
+        total_events_intended = pure_impressions + non_conv_clicks + conversions
+
+        # ---------------------------------------------------------------
+        # Proportional sampling (cap at max_events_per_campaign).
+        # Stochastic rounding: avoids ceiling bias for rare-event verticals
+        # (e.g. Manufacturing CR=1%). A fractional expectation of 0.55
+        # resolves to 1 with 55% probability and 0 with 45% — unbiased.
+        # ---------------------------------------------------------------
         if total_events_intended > max_events_per_campaign:
             ratio = max_events_per_campaign / total_events_intended
-            sampled_pure_imps = int(pure_impressions * ratio)
-            
-            # Use stochastic (probabilistic) rounding for clicks and conversions.
-            # When expected conversions is 0.55, standard round() always returns 1,
-            # which permanently inflates the sampled rate. Stochastic rounding yields
-            # 1 with 55% probability and 0 with 45% probability, ensuring the math
-            # converges correctly across multiple campaigns.
-            s_clicks_float = clicks * ratio
-            sampled_clicks = int(s_clicks_float) + (1 if random.random() < (s_clicks_float - int(s_clicks_float)) else 0)
-            
-            s_conv_float = conversions * ratio
-            sampled_conversions = int(s_conv_float) + (1 if random.random() < (s_conv_float - int(s_conv_float)) else 0)
+
+            def stochastic_round(x):
+                floor = int(x)
+                return floor + (1 if random.random() < (x - floor) else 0)
+
+            sampled_pure_imps     = stochastic_round(pure_impressions * ratio)
+            sampled_non_conv      = stochastic_round(non_conv_clicks  * ratio)
+            sampled_conversions   = stochastic_round(conversions      * ratio)
         else:
-            sampled_pure_imps = pure_impressions
-            sampled_clicks = clicks
+            sampled_pure_imps   = pure_impressions
+            sampled_non_conv    = non_conv_clicks
             sampled_conversions = conversions
 
-        # -------------------------------------------------------
+        # ---------------------------------------------------------------
         # Attribution weight (linear model):
-        # - impression: 0.0  (view-through, no click credit)
-        # - conversion: 1.0  (the confirmed outcome)
-        # - click:      1/n  (equal share across all clicks in campaign)
-        # This is deterministic per campaign — auditable by downstream agents.
-        # -------------------------------------------------------
-        click_weight = round(1.0 / sampled_clicks, 6) if sampled_clicks > 0 else 0.0
-            
-        # Create a list of event types to generate
-        event_types = (["impression"] * sampled_pure_imps) + (["click"] * sampled_clicks) + (["conversion"] * sampled_conversions)
-        random.shuffle(event_types)
-        
-        # Distribute over campaign duration
-        start_dt = datetime.strptime(campaign["start_date"], "%Y-%m-%d")
-        end_dt = datetime.strptime(campaign["end_date"], "%Y-%m-%d")
-        delta_seconds = int((end_dt - start_dt).total_seconds())
-        
-        # Carry industry from campaign for independent vertical filtering downstream
-        campaign_industry = campaign["industry"]
-        
-        for etype in event_types:
-            # Generate random timestamp within campaign
-            random_offset = random.randint(0, delta_seconds)
-            evt_timestamp = start_dt + timedelta(seconds=random_offset)
-            
-            # Select random customer
-            cust = random.choice(customers)
+        #   impression : 0.0  — view-through, no click credit
+        #   click      : 1/n  — equal share across all sampled click events
+        #   conversion : 1.0  — confirmed outcome gets full credit
+        #
+        # "All click events" = non_conv + conversions (both consumed a click action).
+        # ---------------------------------------------------------------
+        total_sampled_clicks = sampled_non_conv + sampled_conversions
+        click_weight = round(1.0 / total_sampled_clicks, 6) if total_sampled_clicks > 0 else 0.0
 
-            # Attribution weight by event type
+        # ---------------------------------------------------------------
+        # Industry-scoped customer pool — no cross-vertical contamination.
+        # Falls back to all customers only if the industry pool is empty
+        # (defensive guard against mis-configured generators).
+        # ---------------------------------------------------------------
+        campaign_industry  = campaign["industry"]
+        industry_customers = customers_by_industry.get(campaign_industry) or list(customers)
+
+        # Build and shuffle the event list
+        event_types = (
+            ["impression"] * sampled_pure_imps
+            + ["click"]      * sampled_non_conv
+            + ["conversion"] * sampled_conversions
+        )
+        random.shuffle(event_types)
+
+        # Timestamps uniformly distributed across campaign window
+        start_dt      = datetime.strptime(campaign["start_date"], "%Y-%m-%d")
+        end_dt        = datetime.strptime(campaign["end_date"],   "%Y-%m-%d")
+        delta_seconds = max(1, int((end_dt - start_dt).total_seconds()))
+
+        for etype in event_types:
+            evt_timestamp = start_dt + timedelta(seconds=random.randint(0, delta_seconds))
+            cust          = random.choice(industry_customers)
+
             if etype == "impression":
                 attr_weight = 0.0
-            elif etype == "conversion":
-                attr_weight = 1.0
-            else:  # click
+                evt_cost    = 0.0
+                evt_revenue = 0.0
+            elif etype == "click":
                 attr_weight = click_weight
-            
-            # Form event dict
-            evt = {
-                "event_id": f"EVT-{event_counter:08d}",
-                "timestamp": evt_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "customer_id": cust["customer_id"],
-                "campaign_id": campaign["campaign_id"],
-                "event_type": etype,
-                "industry": campaign_industry,
+                evt_cost    = round(cpc, 4)
+                evt_revenue = 0.0
+            else:  # conversion — click + convert in one event
+                attr_weight = 1.0
+                evt_cost    = round(cpc, 4)  # conversion also consumed a click cost
+                # Revenue drawn INDEPENDENTLY per event — realistic per-event variance
+                # for Revenue Prediction model (not a uniform split of a pre-summed total)
+                evt_revenue = round(random.uniform(avg_value * 0.70, avg_value * 1.30), 2)
+
+            events.append({
+                "event_id":           f"EVT-{event_counter:08d}",
+                "timestamp":          evt_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "customer_id":        cust["customer_id"],
+                "campaign_id":        campaign["campaign_id"],
+                "event_type":         etype,
+                "industry":           campaign_industry,
                 "attribution_weight": attr_weight,
-                "cost": round(cpc, 4) if etype == "click" else 0.0,
-                "revenue": round(rev_per_conv, 4) if etype == "conversion" else 0.0
-            }
-            events.append(evt)
+                "cost":               evt_cost,
+                "revenue":            evt_revenue,
+            })
             event_counter += 1
-            
+
     return events
