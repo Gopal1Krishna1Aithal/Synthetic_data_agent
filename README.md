@@ -104,6 +104,21 @@ Want to verify your changes haven't broken the JSON schemas, but don't want to w
 python api.py --dry-run
 ```
 
+### 7. Dynamic Overrides (Presentation Hacks)
+If you are presenting to non-technical stakeholders and want the dataset to look "artificially perfect" (e.g., packed with revenue rows), you can override the physics engine using CLI flags:
+
+* **Maximize Revenue Rows (100% CTR and 100% Conversion):**
+  Forces every person who sees the ad to click it and buy the product. The resulting CSV will have the maximum mathematical limit of revenue rows (33.3%).
+  ```bash
+  python api.py --target-ctr 1.0 --target-conversion-rate 1.0 --output-format csv
+  ```
+
+* **Override Ad Costs (CPC):**
+  Forces every click to cost exactly ₹50, regardless of the industry benchmarks.
+  ```bash
+  python api.py --target-cpc 50
+  ```
+
 ---
 
 ## 📊 The Generation Report
