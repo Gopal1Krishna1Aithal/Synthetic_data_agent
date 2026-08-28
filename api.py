@@ -59,10 +59,6 @@ Examples:
     parser.add_argument("--max-events-per-campaign", type=int, default=200,
                         help="Max engagement events written per campaign. Default: 200. "
                              "Higher = more detail, bigger files. Lower = faster, smaller files.")
-    parser.add_argument("--conversions-only", action="store_true",
-                        help="Filter out all impressions and clicks from the output (useful for presentations where you only want to see revenue rows).")
-    parser.add_argument("--presentation-mode", action="store_true",
-                        help="Forces the dataset to be exactly 50%% revenue rows and 50%% zero-revenue rows for a perfect visual mix.")
 
     # Output field presets — controls which columns appear in the output.
     # Use this to avoid bloated files when only specific downstream fields are needed.
@@ -155,17 +151,6 @@ Examples:
     event_cap = 20 if args.dry_run else args.max_events_per_campaign
     events = generate_engagement_events(campaigns, customers, profiles, rules,
                                         max_events_per_campaign=event_cap)
-    
-    if args.conversions_only:
-        events = [e for e in events if e["event_type"] == "conversion"]
-    elif args.presentation_mode:
-        import random
-        conversions = [e for e in events if e["event_type"] == "conversion"]
-        non_conversions = [e for e in events if e["event_type"] != "conversion"]
-        # Take exactly the same number of non-conversions as conversions
-        sampled_non_convs = random.sample(non_conversions, min(len(conversions), len(non_conversions)))
-        events = conversions + sampled_non_convs
-        events.sort(key=lambda x: x["timestamp"])
     
     # ---------------------------------------------------------------
     # Referential Integrity Roll-up: LTV Paradox Fix
