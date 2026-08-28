@@ -1,13 +1,7 @@
 import random
 from datetime import datetime, timedelta, date
 
-FIRST_NAMES = ["James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda", "William", "Elizabeth",
-               "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Charles", "Karen",
-               "Aarav", "Priya", "Rahul", "Anjali", "Vikram", "Neha", "Rohan", "Pooja", "Arjun", "Divya"]
-LAST_NAMES  = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Wilson",
-               "Sharma", "Verma", "Patel", "Singh", "Kumar", "Mehta", "Nair", "Reddy", "Iyer", "Gupta"]
-# RFC 2606 reserved domains — safe for synthetic/test data, never route to real mailboxes
-DOMAINS  = ["example.com", "example.org", "example.net", "mock-domain.test"]
+# Strictly anonymized data, no synthetic names allowed by policy
 GENDERS  = ["Male", "Female", "Non-binary", "Other"]
 SEGMENTS = ["Value", "Mid-Market", "Enterprise", "Consumer"]
 
@@ -115,10 +109,10 @@ def generate_customer_profiles(industry, volume, start_id=1):
 
     for i in range(volume):
         customer_id = f"CUST-{start_id + i:05d}"
-        first_name = random.choice(FIRST_NAMES)
-        last_name = random.choice(LAST_NAMES)
-        name = f"{first_name} {last_name}"
-        email = f"{first_name.lower()}.{last_name.lower()}{random.randint(10, 99)}@{random.choice(DOMAINS)}"
+        
+        # Strictly anonymized data, zero PII (not even synthetic names)
+        name = f"User_{customer_id}"
+        email = f"{customer_id.lower()}@anonymized.local"
         
         # --- Dirty data injection (2% missing values) ---
         age = random.randint(18, 75) if random.random() > 0.02 else None
