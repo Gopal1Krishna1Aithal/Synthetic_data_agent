@@ -119,6 +119,20 @@ If you are presenting to non-technical stakeholders and want the dataset to look
   python api.py --target-cpc 50
   ```
 
+### 8. Frequently Asked Questions (Cheat Sheet)
+
+**"I only want the `engagement_events` dataset. How do I generate just one?"**
+Because the physics engine relies on perfect referential integrity, it *must* generate all three files at the same time (you can't have an event without a customer or a campaign). Simply run the command to export to CSV, and just grab the specific CSV file you need from the folder! You can ignore the others.
+```bash
+python api.py --output-format csv --output-dir my_final_data
+```
+
+**"My output folder is full of JSONs and CSVs mixed together. Why?"**
+If you run the script multiple times (once for JSON, once for CSV) without changing the `--output-dir`, it will place all the files in the same default `outputs/` folder. To get a clean folder with only CSVs, tell the script to put them in a new directory:
+```bash
+python api.py --output-format csv --output-dir presentation_csvs
+```
+
 ---
 
 ## 📊 The Generation Report
