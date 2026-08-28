@@ -22,25 +22,64 @@ def write_json(data, path):
         json.dump(data, f, indent=2)
 
 def main():
-    parser = argparse.ArgumentParser(description="Synthetic Data Agent CLI")
+    parser = argparse.ArgumentParser(
+        description="Synthetic Data Agent — generate industry-specific marketing datasets.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Smallest valid run (all 6 verticals, minimal volume)
+  python api.py
+
+  # Specific verticals and volume
+  python api.py --industries bfsi manufacturing --num-customers 500 --num-campaigns 50
+
+  # CSV output with only churn-model fields
+  python api.py --output-format csv --preset churn
+
+  # Override CPC for a specific vertical
+  python api.py --industries rcg --target-cpc 8.0
+
+  # Validate schema without writing files
+  python api.py --dry-run
+"""
+    )
     parser.add_argument("--industries", nargs="+",
                         default=["bfsi", "insurance", "rcg", "travel", "healthcare", "manufacturing"],
-                        help="List of industries to generate data for")
-    parser.add_argument("--num-customers", type=int, default=100, help="Number of customer profiles to generate")
-    parser.add_argument("--num-campaigns", type=int, default=10, help="Number of campaign logs to generate")
-    parser.add_argument("--output-format", choices=["json", "csv"], default="json", help="Output file format")
-    parser.add_argument("--output-dir", default="outputs", help="Directory where generated logs are saved")
-    
-    # Override-with-fallback seed parameters.
-    # If passed, the value overrides the industry_profiles.json default for THIS run only.
-    # Omitting a flag means the profile default is used — nothing in the JSON is ever touched.
+                        help="Verticals to generate. Default: all 6.")
+    parser.add_argument("--num-customers", type=int, default=60,
+                        help="Total customer profiles to generate (split evenly across industries). Default: 60.")
+    parser.add_argument("--num-campaigns", type=int, default=12,
+                        help="Total campaign logs to generate (split evenly across industries). Default: 12.")
+    parser.add_argument("--output-format", choices=["json", "csv"], default="json",
+                        help="Output file format. Default: json.")
+    parser.add_argument("--output-dir", default="outputs",
+                        help="Directory where generated files are saved. Default: outputs/.")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Generate and validate data but DO NOT write any output files. Useful for testing.")
+    parser.add_argument("--max-events-per-campaign", type=int, default=200,
+                        help="Max engagement events written per campaign. Default: 200. "
+                             "Higher = more detail, bigger files. Lower = faster, smaller files.")
+
+    # Output field presets — controls which columns appear in the output.
+    # Use this to avoid bloated files when only specific downstream fields are needed.
+    parser.add_argument("--preset", choices=["full", "churn", "channel", "campaign-performance"],
+                        default="full",
+                        help=(
+                            "Field preset controlling which columns are written. "
+                            "'full' = all fields (default). "
+                            "'churn' = RFM fields for Churn Agent. "
+                            "'channel' = acquisition fields for Channel Optimizer. "
+                            "'campaign-performance' = campaign attribute + metric fields."
+                        ))
+
+    # Override-with-fallback seed parameters (run-scoped only; JSON never modified).
     parser.add_argument("--target-ctr", type=float, default=None,
                         help="Override CTR for all active industries (e.g. 0.025 for 2.5%%).")
     parser.add_argument("--target-cpc", type=float, default=None,
-                        help="Override CPC in INR for all active industries (e.g. 40 for ₹40/click).")
+                        help="Override CPC in INR for all active industries (e.g. 40 for \u20b940/click).")
     parser.add_argument("--target-conversion-rate", type=float, default=None,
                         help="Override conversion rate for all active industries (e.g. 0.03 for 3%%).")
-    
+
     args = parser.parse_args()
     
     # 1. Load configs
@@ -107,7 +146,11 @@ def main():
         camp_start_id += p_vol
         
     print("Generating engagement events...")
-    events = generate_engagement_events(campaigns, customers, profiles, rules)
+    # Dry-run uses a tiny event cap (20 per campaign) — just enough to validate schema.
+    # Real runs use the --max-events-per-campaign value (default 200).
+    event_cap = 20 if args.dry_run else args.max_events_per_campaign
+    events = generate_engagement_events(campaigns, customers, profiles, rules,
+                                        max_events_per_campaign=event_cap)
     
     # 3. Validate Schemas
     schema_dir = os.path.join(base_dir, "schemas")
@@ -131,26 +174,79 @@ def main():
             print(f"  {metric.upper()}: Actual={vals['actual']:.4f}, Target={vals['target']:.4f} (Dev={vals['deviation']*100:.2f}%)")
     print("-------------------------------------\n")
     
-    # 5. Write outputs
+    # ---------------------------------------------------------------
+    # Field presets — filter output columns per downstream agent need.
+    # ---------------------------------------------------------------
+    PRESETS = {
+        "full": {
+            "customers": ["customer_id", "industry", "acquisition_channel", "name", "email",
+                          "age", "gender", "segment", "signup_date", "total_spend_to_date",
+                          "last_purchase_date"],
+            "campaigns": ["campaign_id", "campaign_name", "industry", "budget", "start_date",
+                          "end_date", "status", "target_channel", "campaign_objective",
+                          "target_segment", "creative_type", "target_audience_size"],
+            "events":    ["event_id", "timestamp", "customer_id", "campaign_id", "event_type",
+                          "industry", "attribution_weight", "cost", "revenue"],
+        },
+        "churn": {
+            # RFM fields: Recency (last_purchase_date), Monetary (total_spend_to_date),
+            # + segment and industry for stratified modelling
+            "customers": ["customer_id", "industry", "segment", "acquisition_channel",
+                          "signup_date", "total_spend_to_date", "last_purchase_date"],
+            "campaigns": ["campaign_id", "industry", "target_segment", "campaign_objective"],
+            "events":    ["event_id", "timestamp", "customer_id", "campaign_id",
+                          "event_type", "revenue"],
+        },
+        "channel": {
+            # Acquisition channel attribution for Channel Optimizer
+            "customers": ["customer_id", "industry", "segment", "acquisition_channel",
+                          "total_spend_to_date"],
+            "campaigns": ["campaign_id", "industry", "target_channel", "budget",
+                          "target_segment"],
+            "events":    ["event_id", "customer_id", "campaign_id", "event_type",
+                          "industry", "attribution_weight", "cost"],
+        },
+        "campaign-performance": {
+            # All campaign attributes + engagement metrics for Campaign Performance Agent
+            "customers": ["customer_id", "industry", "segment"],
+            "campaigns": ["campaign_id", "industry", "target_channel", "campaign_objective",
+                          "target_segment", "creative_type", "target_audience_size",
+                          "budget", "start_date", "end_date", "status"],
+            "events":    ["event_id", "timestamp", "customer_id", "campaign_id",
+                          "event_type", "industry", "attribution_weight", "cost", "revenue"],
+        },
+    }
+
+    preset = PRESETS[args.preset]
+    cust_fields = preset["customers"]
+    camp_fields = preset["campaigns"]
+    evt_fields  = preset["events"]
+
+    # 5. Write outputs (skip if --dry-run)
     out_dir = os.path.join(base_dir, args.output_dir)
+
+    if args.dry_run:
+        print("[Dry Run] Validation complete. No files written (--dry-run flag set).")
+        return
+
     os.makedirs(out_dir, exist_ok=True)
-    
+
+    def filter_fields(records, fields):
+        """Return records with only the requested fields (silently skip missing ones)."""
+        return [{f: r[f] for f in fields if f in r} for r in records]
+
     if args.output_format == "json":
-        write_json(customers, os.path.join(out_dir, "customer_profiles.json"))
-        write_json(campaigns, os.path.join(out_dir, "campaign_logs.json"))
-        write_json(events, os.path.join(out_dir, "engagement_events.json"))
+        write_json(filter_fields(customers, cust_fields), os.path.join(out_dir, "customer_profiles.json"))
+        write_json(filter_fields(campaigns, camp_fields), os.path.join(out_dir, "campaign_logs.json"))
+        write_json(filter_fields(events,    evt_fields),  os.path.join(out_dir, "engagement_events.json"))
     else:
-        cust_fields = ["customer_id", "industry", "acquisition_channel", "name", "email", "age", "gender", "segment", "signup_date", "total_spend_to_date", "last_purchase_date"]
-        camp_fields = ["campaign_id", "campaign_name", "industry", "budget", "start_date", "end_date",
-                       "status", "target_channel", "campaign_objective", "target_segment",
-                       "creative_type", "target_audience_size"]
-        evt_fields = ["event_id", "timestamp", "customer_id", "campaign_id", "event_type", "industry", "attribution_weight", "cost", "revenue"]
-        
-        write_csv(customers, os.path.join(out_dir, "customer_profiles.csv"), cust_fields)
-        write_csv(campaigns, os.path.join(out_dir, "campaign_logs.csv"), camp_fields)
-        write_csv(events, os.path.join(out_dir, "engagement_events.csv"), evt_fields)
-        
-    print(f"Success! Generated logs saved to '{out_dir}' in {args.output_format.upper()} format.")
+        write_csv(filter_fields(customers, cust_fields), os.path.join(out_dir, "customer_profiles.csv"),    cust_fields)
+        write_csv(filter_fields(campaigns, camp_fields), os.path.join(out_dir, "campaign_logs.csv"),        camp_fields)
+        write_csv(filter_fields(events,    evt_fields),  os.path.join(out_dir, "engagement_events.csv"),    evt_fields)
+
+    print(f"\nSuccess! Generated logs saved to '{out_dir}' in {args.output_format.upper()} format.")
+    print(f"Preset '{args.preset}' applied — {len(cust_fields)} customer fields, "
+          f"{len(camp_fields)} campaign fields, {len(evt_fields)} event fields.")
 
 if __name__ == "__main__":
     main()
