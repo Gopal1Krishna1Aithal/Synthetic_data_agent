@@ -61,6 +61,8 @@ Examples:
                              "Higher = more detail, bigger files. Lower = faster, smaller files.")
     parser.add_argument("--conversions-only", action="store_true",
                         help="Filter out all impressions and clicks from the output (useful for presentations where you only want to see revenue rows).")
+    parser.add_argument("--presentation-mode", action="store_true",
+                        help="Forces the dataset to be exactly 50%% revenue rows and 50%% zero-revenue rows for a perfect visual mix.")
 
     # Output field presets — controls which columns appear in the output.
     # Use this to avoid bloated files when only specific downstream fields are needed.
@@ -156,6 +158,14 @@ Examples:
     
     if args.conversions_only:
         events = [e for e in events if e["event_type"] == "conversion"]
+    elif args.presentation_mode:
+        import random
+        conversions = [e for e in events if e["event_type"] == "conversion"]
+        non_conversions = [e for e in events if e["event_type"] != "conversion"]
+        # Take exactly the same number of non-conversions as conversions
+        sampled_non_convs = random.sample(non_conversions, min(len(conversions), len(non_conversions)))
+        events = conversions + sampled_non_convs
+        events.sort(key=lambda x: x["timestamp"])
     
     # ---------------------------------------------------------------
     # Referential Integrity Roll-up: LTV Paradox Fix
