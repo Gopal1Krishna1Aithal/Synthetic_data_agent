@@ -1,0 +1,11 @@
+customer_id,industry,acquisition_channel,name,email,age,gender,segment,signup_date,total_spend_to_date,last_purchase_date
+CUST-00001,bfsi,LinkedIn,Sarah Rodriguez,sarah.rodriguez74@mock-domain.test,56,Male,Mid-Market,2026-06-23,1075372.07,2026-07-01
+CUST-00002,bfsi,LinkedIn,Patricia Williams,patricia.williams18@mock-domain.test,54,Non-binary,Mid-Market,2026-03-23,486908.02,2026-05-02
+CUST-00003,bfsi,Email,Susan Garcia,susan.garcia14@example.com,65,Female,Mid-Market,2025-02-19,1276898.09,2026-07-01
+CUST-00004,bfsi,Facebook,Rohan Miller,rohan.miller93@example.org,68,Other,Enterprise,2025-03-30,10669249.13,2026-06-01
+CUST-00005,bfsi,Organic_Search,Rahul Wilson,rahul.wilson72@example.com,63,Non-binary,Enterprise,2025-07-27,12759729.26,2026-07-24
+CUST-00006,bfsi,Instagram,Patricia Reddy,patricia.reddy84@mock-domain.test,26,Male,Mid-Market,2026-04-23,357644.99,2026-04-23
+CUST-00007,bfsi,Facebook,Divya Sharma,divya.sharma80@example.org,62,Female,Consumer,2025-08-14,57826.93,2026-05-02
+CUST-00008,bfsi,LinkedIn,Aarav Jones,aarav.jones47@example.net,63,Male,Mid-Market,2025-03-24,841083.34,2026-06-30
+CUST-00009,bfsi,Referral,Jessica Jones,jessica.jones27@example.com,68,Other,Mid-Market,2026-04-15,837224.8,2026-07-31
+CUST-00010,bfsi,Facebook,Barbara Gupta,barbara.gupta81@example.net,44,Female,Enterprise,2024-10-25,15716239.34,2026-08-09

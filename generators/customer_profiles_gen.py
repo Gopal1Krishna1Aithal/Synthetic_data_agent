@@ -139,21 +139,9 @@ def generate_customer_profiles(industry, volume, start_id=1):
         days_ago    = random.randint(0, 730)
         signup_date = (TODAY - timedelta(days=days_ago))
 
-        # --- total_spend_to_date: segment range × vertical multiplier (INR) ---
-        lo, hi = SPEND_BY_SEGMENT.get(segment, (500, 15000))
-        total_spend = round(random.uniform(lo * spend_multiplier, hi * spend_multiplier), 2)
-
-        # --- last_purchase_date: recency-gapped from today, nullable ---
-        min_days, max_days, null_prob = RECENCY_CONFIG.get(segment, (30, 365, 0.10))
-        if random.random() < null_prob:
-            last_purchase_date = None
-        else:
-            # Recency gap from today, clamped so it can't precede signup_date
-            days_since_purchase = random.randint(min_days, max_days)
-            candidate = TODAY - timedelta(days=days_since_purchase)
-            # Clamp: purchase must be on or after signup
-            candidate = max(candidate, signup_date)
-            last_purchase_date = candidate.isoformat()
+        # Initial LTV is 0. Revenue is aggregated dynamically from actual engagement events in api.py
+        total_spend = 0.0
+        last_purchase_date = None
 
         customers.append({
             "customer_id": customer_id,

@@ -152,6 +152,23 @@ Examples:
     events = generate_engagement_events(campaigns, customers, profiles, rules,
                                         max_events_per_campaign=event_cap)
     
+    # ---------------------------------------------------------------
+    # Referential Integrity Roll-up: LTV Paradox Fix
+    # ---------------------------------------------------------------
+    # We generated initial customer profiles with 0 spend. Now we roll up
+    # the actual revenue from their generated conversion events to perfectly
+    # align LTV and recency with the event logs.
+    customer_lookup = {c["customer_id"]: c for c in customers}
+    
+    for evt in events:
+        if evt["event_type"] == "conversion" and evt["customer_id"] is not None:
+            c = customer_lookup[evt["customer_id"]]
+            c["total_spend_to_date"] = round(c["total_spend_to_date"] + evt["revenue"], 2)
+            
+            evt_date = evt["timestamp"][:10]  # Extract YYYY-MM-DD
+            if c["last_purchase_date"] is None or evt_date > c["last_purchase_date"]:
+                c["last_purchase_date"] = evt_date
+    
     # 3. Validate Schemas
     schema_dir = os.path.join(base_dir, "schemas")
     

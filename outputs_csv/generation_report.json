@@ -1,0 +1,44 @@
+{
+  "parameters": {
+    "industries": [
+      "bfsi"
+    ],
+    "num_customers": 10,
+    "num_campaigns": 2,
+    "output_format": "csv",
+    "output_dir": "outputs_csv",
+    "dry_run": false,
+    "max_events_per_campaign": 200,
+    "preset": "full",
+    "target_ctr": null,
+    "target_cpc": null,
+    "target_conversion_rate": null
+  },
+  "volumes": {
+    "customers_generated": 10,
+    "campaigns_generated": 2,
+    "events_generated": 399
+  },
+  "statistical_validation": [
+    {
+      "industry": "bfsi",
+      "metrics": {
+        "ctr": {
+          "actual": 0.02506265664160401,
+          "target": 0.02,
+          "deviation": 0.25313283208020043
+        },
+        "cpc": {
+          "actual": 231.9092,
+          "target": 290.0,
+          "deviation": 0.20031310344827588
+        },
+        "conversion_rate": {
+          "actual": 0.0,
+          "target": 0.025,
+          "deviation": 1.0
+        }
+      }
+    }
+  ]
+}

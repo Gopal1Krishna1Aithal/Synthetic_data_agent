@@ -122,6 +122,14 @@ def generate_engagement_events(campaigns, customers, profiles, rules, max_events
             evt_timestamp = start_dt + timedelta(seconds=int(fraction * delta_seconds))
             cust          = random.choice(industry_customers)
 
+            # ---------------------------------------------------------------
+            # iOS 14 / Untracked User Simulation:
+            # 30% of top-of-funnel clicks/impressions are strictly anonymous.
+            # Conversions are ALWAYS tracked (1st party checkout data).
+            # ---------------------------------------------------------------
+            is_untracked = (etype in ["impression", "click"]) and (random.random() < 0.30)
+            assigned_customer_id = None if is_untracked else cust["customer_id"]
+
             if etype == "impression":
                 attr_weight = 0.0
                 evt_cost    = 0.0
@@ -131,16 +139,21 @@ def generate_engagement_events(campaigns, customers, profiles, rules, max_events
                 evt_cost    = round(cpc, 4)
                 evt_revenue = 0.0
             else:  # conversion — click + convert in one event
+                # ---------------------------------------------------------------
+                # Zero Attribution Window Fix:
+                # Real conversions trail the click by 0 to 7 days.
+                # ---------------------------------------------------------------
+                attribution_delay = timedelta(days=random.randint(0, 7), hours=random.randint(0, 23))
+                evt_timestamp += attribution_delay
+                
                 attr_weight = 1.0
                 evt_cost    = round(cpc, 4)  # conversion also consumed a click cost
-                # Revenue drawn INDEPENDENTLY per event — realistic per-event variance
-                # for Revenue Prediction model (not a uniform split of a pre-summed total)
                 evt_revenue = round(random.uniform(avg_value * 0.70, avg_value * 1.30), 2)
 
             events.append({
                 "event_id":           f"EVT-{event_counter:08d}",
                 "timestamp":          evt_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "customer_id":        cust["customer_id"],
+                "customer_id":        assigned_customer_id,
                 "campaign_id":        campaign["campaign_id"],
                 "event_type":         etype,
                 "industry":           campaign_industry,

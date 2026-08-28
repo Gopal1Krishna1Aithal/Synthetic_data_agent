@@ -1,0 +1,3 @@
+campaign_id,campaign_name,industry,budget,start_date,end_date,status,target_channel,campaign_objective,target_segment,creative_type,target_audience_size,reach,impressions,clicks,conversions,leads,spend,cpm,cpl
+CAMP-00001,BFSI_Flash_Launch_CAMP-00001,bfsi,403498.67,2026-10-04,2026-11-05,Paused,Google Search,Conversion,Consumer,Carousel,2692119,32275,32275,1169,55,5,393303.98,12186.03,7150.98
+CAMP-00002,BFSI_Summer_Reactivation_CAMP-00002,bfsi,173004.73,2026-07-01,2026-07-26,Completed,Meta,Brand Awareness,Consumer,Carousel,5622606,99013,99013,1842,11,0,138344.83,1397.24,12576.8

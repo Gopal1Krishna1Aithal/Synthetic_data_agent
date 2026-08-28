@@ -1,6 +1,5 @@
 import os
 import json
-import pytest
 from generators.customer_profiles_gen import generate_customer_profiles
 from generators.campaign_logs_gen import generate_campaign_logs
 from generators.engagement_events_gen import generate_engagement_events
@@ -27,7 +26,8 @@ def test_referential_integrity():
     
     # Assert integrity
     for event in events:
-        assert event["customer_id"] in customer_ids, f"Orphaned customer_id: {event['customer_id']}"
+        if event["customer_id"] is not None:
+            assert event["customer_id"] in customer_ids, f"Orphaned customer_id: {event['customer_id']}"
         assert event["campaign_id"] in campaign_ids, f"Orphaned campaign_id: {event['campaign_id']}"
         
     print(f"Verified referential integrity for {len(events)} events.")

@@ -12,7 +12,7 @@
       "format": "date-time"
     },
     "customer_id": {
-      "type": "string",
+      "type": ["string", "null"],
       "pattern": "^CUST-[0-9]{5}$"
     },
     "campaign_id": {
