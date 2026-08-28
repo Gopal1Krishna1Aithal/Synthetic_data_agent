@@ -49,7 +49,44 @@
     "target_audience_size": {
       "type": "integer",
       "minimum": 1000
+    },
+    "reach": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "impressions": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "clicks": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "conversions": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "leads": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "spend": {
+      "type": "number",
+      "minimum": 0
+    },
+    "cpm": {
+      "type": "number",
+      "minimum": 0
+    },
+    "cpl": {
+      "type": "number",
+      "minimum": 0
     }
   },
-  "required": ["campaign_id", "campaign_name", "industry", "budget", "start_date", "end_date", "status", "target_channel", "campaign_objective", "target_segment", "creative_type", "target_audience_size"]
+  "required": [
+    "campaign_id", "campaign_name", "industry", "budget", "start_date", "end_date",
+    "status", "target_channel", "campaign_objective", "target_segment",
+    "creative_type", "target_audience_size", "reach", "impressions", "clicks",
+    "conversions", "leads", "spend", "cpm", "cpl"
+  ]
 }

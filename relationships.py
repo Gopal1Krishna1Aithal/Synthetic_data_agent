@@ -216,7 +216,7 @@ def calculate_campaign_metrics(campaign, profiles, rules):
     target_cpc = max(target_cpc, 0.10)
     target_cr  = min(max(target_cr,  0.001), 0.80)
 
-    # Step 3 — Impressions (economic identity: budget / CPC / CTR)
+    # Step 3 — Impressions and Audience Saturation
     clicks_possible    = budget / target_cpc
     raw_impressions    = clicks_possible / target_ctr
     seasonality_mult   = get_seasonality_multiplier(
@@ -224,27 +224,58 @@ def calculate_campaign_metrics(campaign, profiles, rules):
     )
     target_impressions = int(raw_impressions * seasonality_mult)
 
-    # Step 4 — Clicks split into non-converting and converting (mutually exclusive)
-    total_clicks    = int(target_impressions * target_ctr)
-    conversions     = int(total_clicks * target_cr)
+    # ---------------------------------------------------------------
+    # SATURATION CAP: Impressions cannot exceed target_audience_size * max_frequency.
+    # If they do, the audience is saturated, impressions are capped, and the
+    # campaign fails to spend its full budget.
+    # ---------------------------------------------------------------
+    audience_size = campaign.get("target_audience_size", 100_000)
+    max_frequency = random.uniform(8.0, 15.0)  # Max times an ad is shown to the same person
+    max_impressions = int(audience_size * max_frequency)
+    
+    if target_impressions > max_impressions:
+        target_impressions = max_impressions
+        total_clicks       = int(target_impressions * target_ctr)
+        conversions        = int(total_clicks * target_cr)
+        total_cost         = round(total_clicks * target_cpc, 2)
+    else:
+        # Step 4 — Clicks split into non-converting and converting (mutually exclusive)
+        total_clicks    = int(target_impressions * target_ctr)
+        conversions     = int(total_clicks * target_cr)
+        
+        # Step 5 — Cost capped at budget
+        total_cost = round(total_clicks * target_cpc, 2)
+        if total_cost > budget:
+            total_cost         = budget
+            total_clicks       = int(total_cost / target_cpc)
+            conversions        = int(total_clicks * target_cr)
+            target_impressions = int(total_clicks / target_ctr) if target_ctr > 0 else 0
+
     non_conv_clicks = max(0, total_clicks - conversions)
 
-    # Step 5 — Cost capped at budget
-    total_cost = round(total_clicks * target_cpc, 2)
-    if total_cost > budget:
-        total_cost      = budget
-        total_clicks    = int(total_cost / target_cpc)
-        conversions     = int(total_clicks * target_cr)
-        non_conv_clicks = max(0, total_clicks - conversions)
-        target_impressions = int(total_clicks / target_ctr) if target_ctr > 0 else 0
+    # Calculate derived historical metrics
+    reach = min(target_impressions, audience_size)
+    cpm = round((total_cost / target_impressions) * 1000, 2) if target_impressions > 0 else 0.0
+    cpl = round(total_cost / conversions, 2) if conversions > 0 else 0.0
+    
+    # Map conversions to leads (1:1 for Lead Gen, partial for other objectives)
+    if campaign.get("campaign_objective") == "Lead Generation":
+        leads = conversions
+    else:
+        leads = int(conversions * random.uniform(0.05, 0.20))
 
     avg_value = profile.get("avg_conversion_value", 1000)
 
     return {
         "impressions":          target_impressions,
+        "reach":                reach,
         "total_clicks":         total_clicks,
         "non_conv_clicks":      non_conv_clicks,
         "conversions":          conversions,
+        "leads":                leads,
+        "spend":                total_cost,
         "cost":                 total_cost,
+        "cpm":                  cpm,
+        "cpl":                  cpl,
         "avg_conversion_value": avg_value,
     }

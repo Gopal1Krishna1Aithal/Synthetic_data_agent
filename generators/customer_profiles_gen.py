@@ -119,8 +119,10 @@ def generate_customer_profiles(industry, volume, start_id=1):
         last_name = random.choice(LAST_NAMES)
         name = f"{first_name} {last_name}"
         email = f"{first_name.lower()}.{last_name.lower()}{random.randint(10, 99)}@{random.choice(DOMAINS)}"
-        age = random.randint(18, 75)
-        gender = random.choice(GENDERS)
+        
+        # --- Dirty data injection (2% missing values) ---
+        age = random.randint(18, 75) if random.random() > 0.02 else None
+        gender = random.choice(GENDERS) if random.random() > 0.02 else None
 
         # --- segment: industry-weighted distribution ---
         # Must mirror SEGMENT_WEIGHTS in campaign_logs_gen.py so campaign targeting

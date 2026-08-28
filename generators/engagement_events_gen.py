@@ -33,6 +33,20 @@ def generate_engagement_events(campaigns, customers, profiles, rules, max_events
 
     for campaign in campaigns:
         metrics           = calculate_campaign_metrics(campaign, profiles, rules)
+        
+        # Stamp historical metrics directly onto the campaign log
+        # so downstream models can train on it directly (like real Ad Platform APIs)
+        campaign.update({
+            "reach":        metrics["reach"],
+            "impressions":  metrics["impressions"],
+            "clicks":       metrics["total_clicks"],
+            "conversions":  metrics["conversions"],
+            "leads":        metrics["leads"],
+            "spend":        metrics["spend"],
+            "cpm":          metrics["cpm"],
+            "cpl":          metrics["cpl"]
+        })
+
         raw_imps          = metrics["impressions"]
         non_conv_clicks   = metrics["non_conv_clicks"]   # clicked but didn't convert
         conversions       = metrics["conversions"]        # clicked AND converted
@@ -96,13 +110,16 @@ def generate_engagement_events(campaigns, customers, profiles, rules, max_events
         )
         random.shuffle(event_types)
 
-        # Timestamps uniformly distributed across campaign window
+        # Timestamps Beta-distributed across campaign window (right-skewed)
+        # Represents launch-day spike tapering off (alpha=1.5, beta=3.0)
         start_dt      = datetime.strptime(campaign["start_date"], "%Y-%m-%d")
         end_dt        = datetime.strptime(campaign["end_date"],   "%Y-%m-%d")
         delta_seconds = max(1, int((end_dt - start_dt).total_seconds()))
 
         for etype in event_types:
-            evt_timestamp = start_dt + timedelta(seconds=random.randint(0, delta_seconds))
+            # random.betavariate(1.5, 3.5) yields values concentrated towards the lower end (0.0 - 0.4)
+            fraction      = random.betavariate(1.5, 3.5)
+            evt_timestamp = start_dt + timedelta(seconds=int(fraction * delta_seconds))
             cust          = random.choice(industry_customers)
 
             if etype == "impression":

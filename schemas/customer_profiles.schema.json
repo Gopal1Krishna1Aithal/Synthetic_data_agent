@@ -23,13 +23,13 @@
       "format": "email"
     },
     "age": {
-      "type": "integer",
+      "type": ["integer", "null"],
       "minimum": 18,
       "maximum": 100
     },
     "gender": {
-      "type": "string",
-      "enum": ["Male", "Female", "Non-binary", "Other"]
+      "type": ["string", "null"],
+      "enum": ["Male", "Female", "Non-binary", "Other", null]
     },
     "segment": {
       "type": "string",

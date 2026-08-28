@@ -184,7 +184,9 @@ Examples:
                           "last_purchase_date"],
             "campaigns": ["campaign_id", "campaign_name", "industry", "budget", "start_date",
                           "end_date", "status", "target_channel", "campaign_objective",
-                          "target_segment", "creative_type", "target_audience_size"],
+                          "target_segment", "creative_type", "target_audience_size",
+                          "reach", "impressions", "clicks", "conversions", "leads",
+                          "spend", "cpm", "cpl"],
             "events":    ["event_id", "timestamp", "customer_id", "campaign_id", "event_type",
                           "industry", "attribution_weight", "cost", "revenue"],
         },
@@ -202,7 +204,7 @@ Examples:
             "customers": ["customer_id", "industry", "segment", "acquisition_channel",
                           "total_spend_to_date"],
             "campaigns": ["campaign_id", "industry", "target_channel", "budget",
-                          "target_segment"],
+                          "target_segment", "reach", "impressions", "conversions", "leads", "cpl"],
             "events":    ["event_id", "customer_id", "campaign_id", "event_type",
                           "industry", "attribution_weight", "cost"],
         },
@@ -211,7 +213,8 @@ Examples:
             "customers": ["customer_id", "industry", "segment"],
             "campaigns": ["campaign_id", "industry", "target_channel", "campaign_objective",
                           "target_segment", "creative_type", "target_audience_size",
-                          "budget", "start_date", "end_date", "status"],
+                          "budget", "start_date", "end_date", "status", "reach", "impressions",
+                          "clicks", "conversions", "leads", "spend", "cpm", "cpl"],
             "events":    ["event_id", "timestamp", "customer_id", "campaign_id",
                           "event_type", "industry", "attribution_weight", "cost", "revenue"],
         },
@@ -244,9 +247,22 @@ Examples:
         write_csv(filter_fields(campaigns, camp_fields), os.path.join(out_dir, "campaign_logs.csv"),        camp_fields)
         write_csv(filter_fields(events,    evt_fields),  os.path.join(out_dir, "engagement_events.csv"),    evt_fields)
 
+    # 6. Write Generation Report
+    generation_report = {
+        "parameters": vars(args),
+        "volumes": {
+            "customers_generated": len(customers),
+            "campaigns_generated": len(campaigns),
+            "events_generated": len(events)
+        },
+        "statistical_validation": stats_report
+    }
+    write_json(generation_report, os.path.join(out_dir, "generation_report.json"))
+
     print(f"\nSuccess! Generated logs saved to '{out_dir}' in {args.output_format.upper()} format.")
     print(f"Preset '{args.preset}' applied — {len(cust_fields)} customer fields, "
           f"{len(camp_fields)} campaign fields, {len(evt_fields)} event fields.")
+    print(f"Generation report saved to '{os.path.join(out_dir, 'generation_report.json')}'.")
 
 if __name__ == "__main__":
     main()
