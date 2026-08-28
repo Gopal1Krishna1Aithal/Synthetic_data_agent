@@ -29,7 +29,27 @@
     "status": {
       "type": "string",
       "enum": ["Completed", "Active", "Paused"]
+    },
+    "target_channel": {
+      "type": "string",
+      "enum": ["Meta", "Google Search", "LinkedIn", "YouTube", "Google Display", "Instagram", "Industry Portals"]
+    },
+    "campaign_objective": {
+      "type": "string",
+      "enum": ["Brand Awareness", "Lead Generation", "Conversion", "Engagement", "Retention"]
+    },
+    "target_segment": {
+      "type": "string",
+      "enum": ["Value", "Consumer", "Mid-Market", "Enterprise"]
+    },
+    "creative_type": {
+      "type": "string",
+      "enum": ["Image", "Video", "Carousel", "Document", "Text"]
+    },
+    "target_audience_size": {
+      "type": "integer",
+      "minimum": 1000
     }
   },
-  "required": ["campaign_id", "campaign_name", "industry", "budget", "start_date", "end_date", "status"]
+  "required": ["campaign_id", "campaign_name", "industry", "budget", "start_date", "end_date", "status", "target_channel", "campaign_objective", "target_segment", "creative_type", "target_audience_size"]
 }
