@@ -46,7 +46,10 @@ except ImportError:
 # 1. Flask App Implementation (Default)
 # ===============================================================
 def create_flask_app():
-    app = Flask(__name__)
+    template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+    app = Flask(__name__, template_folder=template_dir)
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.jinja_env.auto_reload = True
 
     @app.route("/", methods=["GET"])
     def root():
