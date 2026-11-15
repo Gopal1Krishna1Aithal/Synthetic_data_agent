@@ -277,14 +277,21 @@
       }
 
       if (report && report.statistical_validation) {
-        const val = report.statistical_validation;
-        const ctr = val.ctr || {};
-        const cpc = val.cpc || {};
-        const cvr = val.conversion_rate || {};
+        let stats = report.statistical_validation;
+        if (Array.isArray(stats) && stats.length > 0) {
+          stats = stats[0].metrics || stats[0] || {};
+        }
+        const ctr = stats.ctr || {};
+        const cpc = stats.cpc || {};
+        const cvr = stats.conversion_rate || {};
 
-        document.getElementById('stat-ctr').innerHTML = `Target: ${(ctr.target * 100 || 0).toFixed(2)}% | Actual: ${(ctr.actual * 100 || 0).toFixed(2)}% <span class="text-xs text-slate-500">(${ctr.deviation_pct ? ctr.deviation_pct.toFixed(1) : 0}% dev)</span>`;
-        document.getElementById('stat-cpc').innerHTML = `Target: ₹${(cpc.target || 0).toFixed(0)} | Actual: ₹${(cpc.actual || 0).toFixed(1)} <span class="text-xs text-slate-500">(${cpc.deviation_pct ? cpc.deviation_pct.toFixed(1) : 0}% dev)</span>`;
-        document.getElementById('stat-cvr').innerHTML = `Target: ${(cvr.target * 100 || 0).toFixed(2)}% | Actual: ${(cvr.actual * 100 || 0).toFixed(2)}% <span class="text-xs text-slate-500">(${cvr.deviation_pct ? cvr.deviation_pct.toFixed(1) : 0}% dev)</span>`;
+        const ctrDev = (ctr.deviation !== undefined ? ctr.deviation * 100 : (ctr.deviation_pct || 0)).toFixed(1);
+        const cpcDev = (cpc.deviation !== undefined ? cpc.deviation * 100 : (cpc.deviation_pct || 0)).toFixed(1);
+        const cvrDev = (cvr.deviation !== undefined ? cvr.deviation * 100 : (cvr.deviation_pct || 0)).toFixed(1);
+
+        document.getElementById('stat-ctr').innerHTML = `Target: ${((ctr.target || 0) * 100).toFixed(2)}% | Actual: ${((ctr.actual || 0) * 100).toFixed(2)}% <span class="text-xs text-slate-500">(${ctrDev}% dev)</span>`;
+        document.getElementById('stat-cpc').innerHTML = `Target: ₹${(cpc.target || 0).toFixed(0)} | Actual: ₹${(cpc.actual || 0).toFixed(1)} <span class="text-xs text-slate-500">(${cpcDev}% dev)</span>`;
+        document.getElementById('stat-cvr').innerHTML = `Target: ${((cvr.target || 0) * 100).toFixed(2)}% | Actual: ${((cvr.actual || 0) * 100).toFixed(2)}% <span class="text-xs text-slate-500">(${cvrDev}% dev)</span>`;
       }
     }
 
