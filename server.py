@@ -96,23 +96,31 @@ def create_flask_app():
         payload = request.get_json(silent=True) or {}
         industry = payload.get("industry")
         if not industry:
-            return jsonify({"error": "Missing required field 'industry'"}), 400
+            return jsonify({"status": "error", "error": "Missing required field 'industry'"}), 400
 
         try:
+            vol = payload.get("volume") or payload.get("num_customers") or 100
+            num_camps = payload.get("num_campaigns")
+            if num_camps is not None:
+                num_camps = int(num_camps)
+
             result = generate_synthetic_data(
                 industry=industry,
                 dataset_type=payload.get("dataset_type", "all"),
-                volume=int(payload.get("volume", 100)),
+                volume=int(vol),
                 seed_parameters=payload.get("seed_parameters"),
-                num_campaigns=payload.get("num_campaigns"),
+                num_campaigns=num_camps,
                 max_events_per_campaign=int(payload.get("max_events_per_campaign", 200)),
                 output_format="dict",
             )
-            return jsonify(result)
+            # Ensure status is set for web UI convenience
+            response_payload = dict(result)
+            response_payload["status"] = "success"
+            return jsonify(response_payload)
         except ValueError as e:
-            return jsonify({"error": str(e)}), 422
+            return jsonify({"status": "error", "error": str(e)}), 422
         except Exception as e:
-            return jsonify({"error": f"Generation failed: {str(e)}"}), 500
+            return jsonify({"status": "error", "error": f"Generation failed: {str(e)}"}), 500
 
     @app.route("/generate/batch", methods=["POST"])
     def batch():

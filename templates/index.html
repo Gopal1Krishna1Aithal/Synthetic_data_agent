@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
+    .preset-active { border-color: #2563eb !important; background-color: #eff6ff !important; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
@@ -17,7 +18,7 @@
     </div>
     <div class="flex items-center space-x-3">
       <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800" id="api-status">
-        Backend Connected
+        Checking server...
       </span>
     </div>
   </header>
@@ -51,18 +52,18 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-slate-700 mb-1">Target Downstream Preset</label>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Target Downstream Preset (Optional)</label>
         <div class="grid grid-cols-1 gap-2">
-          <button type="button" onclick="applyPreset('churn')" class="text-left text-xs border border-slate-200 rounded px-3 py-2 hover:bg-slate-50 transition">
-            <span class="font-semibold block text-slate-800">Agent 6: Predictive Churn</span>
-            <span class="text-slate-500 text-[11px]">Includes RFM metrics, churn risk tier, and explainable top drivers.</span>
+          <button type="button" id="preset-churn" onclick="togglePreset('churn')" class="text-left text-xs border border-slate-200 rounded px-3 py-2 hover:bg-slate-50 transition">
+            <span class="font-semibold block text-slate-800">Agent 6: Predictive Churn Mode</span>
+            <span class="text-slate-500 text-[11px]">Enables customer RFM history, ground-truth churn labels, and risk tiers.</span>
           </button>
-          <button type="button" onclick="applyPreset('performance')" class="text-left text-xs border border-slate-200 rounded px-3 py-2 hover:bg-slate-50 transition">
-            <span class="font-semibold block text-slate-800">Agent 4: Campaign Predictor</span>
-            <span class="text-slate-500 text-[11px]">Includes stamped reach, impressions, spend, CPM, and CPL.</span>
+          <button type="button" id="preset-performance" onclick="togglePreset('performance')" class="text-left text-xs border border-slate-200 rounded px-3 py-2 hover:bg-slate-50 transition">
+            <span class="font-semibold block text-slate-800">Agent 4: Campaign Predictor Mode</span>
+            <span class="text-slate-500 text-[11px]">Enables stamped reach, impressions, spend, CPM, and CPL targets.</span>
           </button>
-          <button type="button" onclick="applyPreset('channel')" class="text-left text-xs border border-slate-200 rounded px-3 py-2 hover:bg-slate-50 transition">
-            <span class="font-semibold block text-slate-800">Agent 3: Budget Allocator</span>
+          <button type="button" id="preset-channel" onclick="togglePreset('channel')" class="text-left text-xs border border-slate-200 rounded px-3 py-2 hover:bg-slate-50 transition">
+            <span class="font-semibold block text-slate-800">Agent 3: Budget Allocator Mode</span>
             <span class="text-slate-500 text-[11px]">Includes channel attribution, benchmark CPC, and diminishing returns.</span>
           </button>
         </div>
@@ -154,20 +155,49 @@
       engagement_events: []
     };
     let activeTab = 'customers';
+    let selectedPreset = null;
 
-    function applyPreset(preset) {
-      if (preset === 'churn') {
-        document.getElementById('industry-select').value = 'rcg';
-        document.getElementById('num-customers').value = 100;
-        document.getElementById('num-campaigns').value = 5;
-      } else if (preset === 'performance') {
-        document.getElementById('industry-select').value = 'manufacturing';
-        document.getElementById('num-customers').value = 30;
-        document.getElementById('num-campaigns').value = 15;
-      } else if (preset === 'channel') {
-        document.getElementById('industry-select').value = 'bfsi';
-        document.getElementById('num-customers').value = 50;
-        document.getElementById('num-campaigns').value = 10;
+    // Determine backend base URL: works both on http://localhost:8000 and file:///
+    function getApiBaseUrl() {
+      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        return window.location.origin;
+      }
+      return 'http://127.0.0.1:8000';
+    }
+
+    // Health check on load
+    async function checkServerHealth() {
+      const statusEl = document.getElementById('api-status');
+      try {
+        const resp = await fetch(getApiBaseUrl() + '/health');
+        if (resp.ok) {
+          statusEl.innerText = 'Backend Connected (' + getApiBaseUrl() + ')';
+          statusEl.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800';
+        } else {
+          throw new Error('HTTP ' + resp.status);
+        }
+      } catch (err) {
+        statusEl.innerText = 'Backend Offline — start: python server.py';
+        statusEl.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800';
+      }
+    }
+    checkServerHealth();
+
+    // Toggle preset WITHOUT changing the user's selected vertical or volume
+    function togglePreset(preset) {
+      const btnChurn = document.getElementById('preset-churn');
+      const btnPerf = document.getElementById('preset-performance');
+      const btnChan = document.getElementById('preset-channel');
+
+      [btnChurn, btnPerf, btnChan].forEach(b => b.classList.remove('preset-active'));
+
+      if (selectedPreset === preset) {
+        selectedPreset = null; // deselect
+      } else {
+        selectedPreset = preset;
+        if (preset === 'churn') btnChurn.classList.add('preset-active');
+        if (preset === 'performance') btnPerf.classList.add('preset-active');
+        if (preset === 'channel') btnChan.classList.add('preset-active');
       }
     }
 
@@ -181,32 +211,47 @@
       spinner.classList.remove('hidden');
 
       const industry = document.getElementById('industry-select').value;
-      const numCustomers = parseInt(document.getElementById('num-customers').value, 10);
-      const numCampaigns = parseInt(document.getElementById('num-campaigns').value, 10);
+      const numCustomers = parseInt(document.getElementById('num-customers').value, 10) || 50;
+      const numCampaigns = parseInt(document.getElementById('num-campaigns').value, 10) || 5;
+
+      const seedParams = {};
+      if (selectedPreset === 'churn') {
+        seedParams['baseline_history'] = true;
+      }
 
       try {
-        const response = await fetch('/generate', {
+        const url = getApiBaseUrl() + '/generate';
+        const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             industry: industry,
             dataset_type: 'all',
             num_customers: numCustomers,
-            num_campaigns: numCampaigns
+            volume: numCustomers,
+            num_campaigns: numCampaigns,
+            seed_parameters: seedParams
           })
         });
 
-        const res = await response.json();
-        if (res.status === 'success') {
-          currentData = res.synthetic_dataset;
-          updateValidationScore(res.validation_score, res.generation_report);
-          updateCounts();
-          renderActiveTable();
-        } else {
-          alert('Generation error: ' + (res.message || 'Unknown'));
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || ('HTTP Error ' + response.status));
         }
+
+        const res = await response.json();
+        const raw = res.synthetic_dataset || {};
+        
+        // Normalize keys across core output conventions
+        currentData.customer_profiles = raw.customer_profiles || raw.customers || [];
+        currentData.campaign_logs = raw.campaign_logs || raw.campaigns || [];
+        currentData.engagement_events = raw.engagement_events || raw.events || [];
+
+        updateValidationScore(res.validation_score, res.generation_report);
+        updateCounts();
+        renderActiveTable();
       } catch (err) {
-        alert('Failed to connect to backend: ' + err.message);
+        alert('Generation failed: ' + err.message + '\n\nPlease ensure "python server.py" is running in your terminal.');
       } finally {
         btn.disabled = false;
         text.innerText = 'Generate Synthetic Data';
@@ -217,10 +262,11 @@
     function updateValidationScore(score, report) {
       const valScoreEl = document.getElementById('val-score');
       const valStatusEl = document.getElementById('val-status');
-      const pct = (score * 100).toFixed(1);
+      const s = typeof score === 'number' ? score : 0;
+      const pct = (s * 100).toFixed(1);
       valScoreEl.innerText = pct + '%';
       
-      if (score >= 0.75) {
+      if (s >= 0.70) {
         valScoreEl.className = 'text-2xl font-bold text-emerald-600';
         valStatusEl.innerText = 'High Quality (Physics & Schemas Verified)';
         valStatusEl.className = 'block text-[11px] font-medium text-emerald-600';
@@ -236,9 +282,9 @@
         const cpc = val.cpc || {};
         const cvr = val.conversion_rate || {};
 
-        document.getElementById('stat-ctr').innerHTML = `Target: ${(ctr.target * 100 || 0).toFixed(2)}% | Actual: ${(ctr.actual * 100 || 0).toFixed(2)}% <span class="text-xs text-slate-500">(${ctr.deviation_pct?.toFixed(1) || 0}% dev)</span>`;
-        document.getElementById('stat-cpc').innerHTML = `Target: ₹${(cpc.target || 0).toFixed(0)} | Actual: ₹${(cpc.actual || 0).toFixed(1)} <span class="text-xs text-slate-500">(${cpc.deviation_pct?.toFixed(1) || 0}% dev)</span>`;
-        document.getElementById('stat-cvr').innerHTML = `Target: ${(cvr.target * 100 || 0).toFixed(2)}% | Actual: ${(cvr.actual * 100 || 0).toFixed(2)}% <span class="text-xs text-slate-500">(${cvr.deviation_pct?.toFixed(1) || 0}% dev)</span>`;
+        document.getElementById('stat-ctr').innerHTML = `Target: ${(ctr.target * 100 || 0).toFixed(2)}% | Actual: ${(ctr.actual * 100 || 0).toFixed(2)}% <span class="text-xs text-slate-500">(${ctr.deviation_pct ? ctr.deviation_pct.toFixed(1) : 0}% dev)</span>`;
+        document.getElementById('stat-cpc').innerHTML = `Target: ₹${(cpc.target || 0).toFixed(0)} | Actual: ₹${(cpc.actual || 0).toFixed(1)} <span class="text-xs text-slate-500">(${cpc.deviation_pct ? cpc.deviation_pct.toFixed(1) : 0}% dev)</span>`;
+        document.getElementById('stat-cvr').innerHTML = `Target: ${(cvr.target * 100 || 0).toFixed(2)}% | Actual: ${(cvr.actual * 100 || 0).toFixed(2)}% <span class="text-xs text-slate-500">(${cvr.deviation_pct ? cvr.deviation_pct.toFixed(1) : 0}% dev)</span>`;
       }
     }
 
