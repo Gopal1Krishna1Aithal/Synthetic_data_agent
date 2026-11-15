@@ -1,0 +1,44 @@
+{
+  "parameters": {
+    "industries": [
+      "healthcare"
+    ],
+    "num_customers": 60,
+    "num_campaigns": 12,
+    "output_format": "csv",
+    "output_dir": "healthcare_demo",
+    "dry_run": false,
+    "max_events_per_campaign": 200,
+    "preset": "full",
+    "target_ctr": null,
+    "target_cpc": null,
+    "target_conversion_rate": null
+  },
+  "volumes": {
+    "customers_generated": 60,
+    "campaigns_generated": 12,
+    "events_generated": 2402
+  },
+  "statistical_validation": [
+    {
+      "industry": "healthcare",
+      "metrics": {
+        "ctr": {
+          "actual": 0.02331390507910075,
+          "target": 0.025,
+          "deviation": 0.06744379683597007
+        },
+        "cpc": {
+          "actual": 85.77513392857142,
+          "target": 130.0,
+          "deviation": 0.34019127747252753
+        },
+        "conversion_rate": {
+          "actual": 0.05357142857142857,
+          "target": 0.02,
+          "deviation": 1.6785714285714286
+        }
+      }
+    }
+  ]
+}

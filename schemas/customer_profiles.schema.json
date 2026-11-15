@@ -46,7 +46,37 @@
     "last_purchase_date": {
       "type": ["string", "null"],
       "format": "date"
+    },
+    "days_since_last_purchase": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Days between last_purchase_date and the reference date (2026-08-20). Null if customer has never purchased."
+    },
+    "purchase_frequency": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Count of conversion events attributed to this customer in the generated dataset."
+    },
+    "churn_risk_tier": {
+      "type": "string",
+      "enum": ["Low", "Medium", "High"],
+      "description": "Ground-truth churn risk tier computed from RFM signals and industry-specific churn windows."
+    },
+    "is_churned": {
+      "type": "boolean",
+      "description": "True when churn_risk_tier is High. Ground-truth label for Agent 6 (Predictive Churn) model training."
+    },
+    "top_drivers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Key factors explaining the customer's churn risk score (e.g. inactivity, low frequency, segment vulnerability)."
     }
   },
-  "required": ["customer_id", "industry", "acquisition_channel", "name", "email", "age", "gender", "segment", "signup_date", "total_spend_to_date", "last_purchase_date"]
+  "required": [
+    "customer_id", "industry", "acquisition_channel", "name", "email",
+    "age", "gender", "segment", "signup_date", "total_spend_to_date",
+    "last_purchase_date",
+    "days_since_last_purchase", "purchase_frequency", "churn_risk_tier", "is_churned",
+    "top_drivers"
+  ]
 }

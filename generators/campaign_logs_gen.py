@@ -107,7 +107,11 @@ def _weighted_choice(weight_dict):
     return random.choices(keys, weights=weights, k=1)[0]
 
 
-def generate_campaign_logs(industry, volume, start_id=1):
+def generate_campaign_logs(industry, volume, start_id=1,
+                           date_range=None, target_channels=None,
+                           campaign_objective=None, target_segment=None,
+                           creative_type=None, target_audience_size=None,
+                           budget_range=None):
     """
     Generate synthetic campaign log records for a specific industry.
 
@@ -119,30 +123,67 @@ def generate_campaign_logs(industry, volume, start_id=1):
         Number of campaign records to generate.
     start_id : int
         The starting integer for campaign IDs (default 1).
+    date_range : list[str] | None
+        Optional ["YYYY-MM-DD", "YYYY-MM-DD"] window for campaign start dates.
+    target_channels : list[str] | None
+        Optional allowlist of channels (e.g. ["Meta", "LinkedIn"]).
+    campaign_objective : str | None
+        Optional fixed objective override (e.g. "Conversion", "Lead Generation").
+    target_segment : str | None
+        Optional fixed audience segment override (e.g. "Enterprise", "Consumer").
+    creative_type : str | None
+        Optional fixed creative type override (e.g. "Video", "Carousel").
+    target_audience_size : int | None
+        Optional fixed audience size override (e.g. 250000).
+    budget_range : tuple[float, float] | None
+        Optional (min_budget, max_budget) in INR override.
     """
     campaigns = []
-    base_date = datetime(2026, 1, 1)
+
+    # --- Resolve date window ---
+    if date_range and len(date_range) == 2:
+        window_start = datetime.strptime(date_range[0], "%Y-%m-%d")
+        window_end   = datetime.strptime(date_range[1], "%Y-%m-%d")
+        if (window_end - window_start).days < 14:
+            window_end = window_start + timedelta(days=60)
+    else:
+        window_start = datetime(2026, 1, 1)
+        window_end   = datetime(2026, 10, 27)
+
+    current_time = window_end
+    total_window_days = max(1, (window_end - window_start).days)
+
+    # --- Resolve channel weight subset ---
+    full_channel_weights = CHANNEL_WEIGHTS.get(industry, {"Meta": 1.0})
+    if target_channels:
+        requested = {ch.strip() for ch in target_channels}
+        filtered = {k: v for k, v in full_channel_weights.items() if k in requested}
+        channel_weights_to_use = filtered if filtered else full_channel_weights
+    else:
+        channel_weights_to_use = full_channel_weights
+
+    # Budget range resolution
+    default_budget_lo, default_budget_hi = BUDGET_RANGES.get(industry, (10000, 100000))
+    if budget_range and len(budget_range) == 2:
+        lo, hi = budget_range
+    else:
+        lo, hi = default_budget_lo, default_budget_hi
 
     for i in range(volume):
         campaign_id = f"CAMP-{start_id + i:05d}"
 
-        adj = random.choice(ADJECTIVES)
+        adj  = random.choice(ADJECTIVES)
         noun = random.choice(NOUNS)
         campaign_name = f"{industry.upper()}_{adj}_{noun}_{campaign_id}"
 
-        # Budget range based on vertical cost tier
-        lo, hi = BUDGET_RANGES.get(industry, (10000, 100000))
         budget = round(random.uniform(lo, hi), 2)
 
-        # Campaign span
-        start_offset = random.randint(0, 300)
+        start_offset  = random.randint(0, max(0, total_window_days - 14))
         duration_days = random.randint(14, 60)
 
-        start_dt = base_date + timedelta(days=start_offset)
-        end_dt = start_dt + timedelta(days=duration_days)
+        start_dt = window_start + timedelta(days=start_offset)
+        end_dt   = start_dt + timedelta(days=duration_days)
 
-        # Status based on current date (Aug 2026)
-        current_time = datetime(2026, 8, 20)
         if end_dt < current_time:
             status = "Completed"
         elif start_dt <= current_time <= end_dt:
@@ -150,23 +191,33 @@ def generate_campaign_logs(industry, volume, start_id=1):
         else:
             status = "Paused"
 
-        # --- New fields: industry-weighted distributions ---
+        # Channel
+        channel = _weighted_choice(channel_weights_to_use)
 
-        # Channel: drawn from vertical-specific weights
-        channel = _weighted_choice(CHANNEL_WEIGHTS.get(industry, {"Meta": 1.0}))
+        # Objective (parameter override or vertical weight)
+        if campaign_objective:
+            objective = campaign_objective
+        else:
+            objective = _weighted_choice(OBJECTIVE_WEIGHTS.get(industry, {"Brand Awareness": 1.0}))
 
-        # Objective: drawn from vertical-specific weights
-        objective = _weighted_choice(OBJECTIVE_WEIGHTS.get(industry, {"Brand Awareness": 1.0}))
+        # Segment (parameter override or vertical weight)
+        if target_segment:
+            segment = target_segment
+        else:
+            segment = _weighted_choice(SEGMENT_WEIGHTS.get(industry, {"Consumer": 1.0}))
 
-        # Segment: drawn from vertical-specific weights
-        segment = _weighted_choice(SEGMENT_WEIGHTS.get(industry, {"Consumer": 1.0}))
+        # Creative type (parameter override or vertical weight)
+        if creative_type:
+            creative = creative_type
+        else:
+            creative = _weighted_choice(CREATIVE_WEIGHTS.get(industry, {"Image": 1.0}))
 
-        # Creative type: drawn from vertical-specific weights
-        creative = _weighted_choice(CREATIVE_WEIGHTS.get(industry, {"Image": 1.0}))
-
-        # Audience size: channel determines the plausible universe
-        aud_lo, aud_hi = AUDIENCE_SIZE_BY_CHANNEL.get(channel, (50_000, 5_000_000))
-        audience_size = random.randint(aud_lo, aud_hi)
+        # Audience size (parameter override or channel universe)
+        if target_audience_size:
+            audience_size = int(target_audience_size)
+        else:
+            aud_lo, aud_hi = AUDIENCE_SIZE_BY_CHANNEL.get(channel, (50_000, 5_000_000))
+            audience_size = random.randint(aud_lo, aud_hi)
 
         campaigns.append({
             "campaign_id":           campaign_id,

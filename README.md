@@ -1,145 +1,183 @@
-# Synthetic Data Agent
+# Synthetic Data Agent (Agent 2)
+### Marketing Intelligence Multi-Agent Suite
 
-A highly advanced, mathematically rigorous synthetic data generation pipeline designed to simulate complex, multi-vertical digital marketing datasets. This project is purpose-built to act as the foundational training data for downstream Machine Learning models (such as Predictive Churn, Budget Allocators, and Campaign Performance predictors) in a privacy-safe, PII-free environment.
+A production-grade, mathematically grounded synthetic data generation engine simulating realistic multi-vertical digital marketing ecosystems. Built specifically as **Agent 2** in the autonomous 8-Agent Marketing Intelligence Suite to feed downstream Machine Learning agents with privacy-safe, statistically representative data.
 
 ---
 
-## 📂 Project Structure
+## 🎯 System Role & Downstream Integration
+
+Agent 2 serves as the ground-truth data factory for the entire marketing intelligence platform:
+
+| Downstream Agent | Primary Dataset Consumed | Key Features Provided | Business / ML Purpose |
+| :--- | :--- | :--- | :--- |
+| **Agent 4: Campaign Performance Predictor** | `campaign_logs` | `reach`, `impressions`, `clicks`, `conversions`, `spend`, `cpm`, `cpl` | Multi-objective regression models to forecast campaign efficacy prior to ad spend. |
+| **Agent 3: Budget Allocator** | `campaign_logs`, `engagement_events` | `channel`, `budget`, diminishing returns, CPC benchmarks | Media mix optimization, channel saturation modeling, and budget re-allocation. |
+| **Agent 6: Predictive Churn & Engagement** | `customer_profiles`, `engagement_events` | `is_churned`, `churn_risk_tier`, `top_drivers`, `days_since_last_purchase`, `purchase_frequency`, RFM stream | Supervised churn classification, survival analysis, and automated retention trigger discovery. |
+| **Agent 5: Marketing Optimization Orchestrator** | All datasets | Cross-vertical state tables, real-time batch simulations | End-to-end autonomous closed-loop campaign orchestration. |
+| **Agent 8: Governance & Guardrails** | Data Schemas & Identifiers | Zero real customer PII, synthetic IDs (`CUST-XXXXX`, `CAMP-XXXXX`), Draft-7 schemas | Compliance audits, privacy guarantees, schema validation. |
+
+---
+
+## 📂 Project Architecture
 
 ```text
 synthetic-data-agent/
-|-- api.py                        # The main CLI entrypoint
-|-- relationships.py              # Mathematical physics engine (normalization, multipliers)
-|-- validation.py                 # JSON Schema and statistical validation logic
-|-- LOGIC_EXPLANATION.md          # Read this to understand the ML-features and math logic
-|-- README.md                     # This file
-|
-|-- config/                       
-|   |-- industry_profiles.json    # Target macro-benchmarks (CPC, CTR) by vertical
-|   |-- relationship_rules.json   # Multipliers (how video vs image affects CTR)
-|
-|-- generators/                   # Core generation logic
-|   |-- campaign_logs_gen.py      # Generates campaigns based on industry rules
-|   |-- customer_profiles_gen.py  # Generates PII-free customers via Faker
-|   |-- engagement_events_gen.py  # Generates the millions of ad clicks/conversions
-|
-|-- schemas/                      # Strict JSON Schemas for validation
+|-- core.py                         # Canonical Python API (generate_synthetic_data, generate_batch)
+|-- server.py                       # REST API microservice (Flask-based HTTP server)
+|-- api.py                          # CLI wrapper for local executions and presets
+|-- churn_labels.py                 # Ground-truth churn simulation engine for Agent 6
+|-- validation.py                   # Statistical validation engine (benchmark deviations, correlations, TVD)
+|-- relationships.py                # Marketing physics engine (saturation, multipliers, attribution delays)
+|-- config/
+|   |-- industry_profiles.json      # Vertical benchmarks (CPC, CTR, CVR, budget ranges)
+|   |-- relationship_rules.json     # Behavioral rules (creative type, audience, channel boosts)
+|-- generators/
+|   |-- campaign_logs_gen.py        # Campaign generator with targeted seed overrides
+|   |-- customer_profiles_gen.py    # Customer generator with baseline RFM histories
+|   |-- engagement_events_gen.py    # Funnel event simulator (impressions -> clicks -> conversions)
+|-- schemas/                        # JSON Draft-7 schemas with strict typing
 |   |-- campaign_logs.schema.json
 |   |-- customer_profiles.schema.json
 |   |-- engagement_events.schema.json
-|
-|-- tests/                        
-|   |-- test_referential_integrity.py  # Tests LTV rollups and foreign key constraints
-|
-|-- outputs/                      # Default output directory for generated JSONs
+|-- tests/
+|   |-- test_referential_integrity.py  # 23-test automated regression & integrity suite
+|-- outputs/                        # Default output directory for generated deliverables
 ```
 
 ---
 
-## ⚙️ Data Flow & Architecture
+## ⚡ Core Capabilities
 
-The pipeline follows a strict generation order to ensure 100% mathematical referential integrity across the datasets:
-
-1. **Macro Configuration Load:** The pipeline loads the industry benchmarks (`industry_profiles.json`) and the relationship multipliers (`relationship_rules.json`).
-2. **Customer Initialization:** `customer_profiles_gen.py` generates realistic, PII-free profiles using the `Faker` library. **Crucially, customer Lifetime Value (LTV) is initialized to ₹0.**
-3. **Campaign Generation:** `campaign_logs_gen.py` spawns ad campaigns. It mathematically determines target audiences, assigns budgets, and calculates expected costs based on the industry physics.
-4. **Event Simulation:** `engagement_events_gen.py` unleashes the marketing physics engine:
-    * It runs a `min(impressions, audience_size)` check to enforce Audience Saturation.
-    * It applies Beta-distributed timestamps to mimic launch-day engagement spikes.
-    * It applies a 0-7 day attribution delay for conversion events.
-    * It simulates iOS 14 by masking 30% of top-of-funnel clicks with `customer_id: null`.
-5. **LTV Roll-up (Integrity Check):** The main `api.py` loops back through the generated conversion events and aggregates the exact `revenue` into the respective user's `customer_profile`, ensuring the profile LTV matches the event log perfectly.
-6. **Validation:** Every row is validated against the strict JSON schemas, and a statistical validation report is generated to prove the generated data didn't drift too far from the macro-benchmarks.
-7. **Export:** Files are serialized to JSON or CSV based on the CLI input.
+1. **Six Industry Verticals:** `bfsi`, `insurance`, `rcg` (Retail/CPG), `travel`, `healthcare`, and `manufacturing`.
+2. **Referential Integrity & Zero PII:** Zero orphan foreign keys. All customer and campaign references resolve. Customer LTV matches conversion event revenues with mathematical precision. All identifiers are synthetic tokens.
+3. **Targeted Generation:** Generate only the datasets required (`campaign_logs`, `customer_profiles`, `engagement_events`, or `all`).
+4. **Seed Parameter Overrides:** Fine-grained simulation controls:
+   - `date_range`: Explicit temporal bounds for campaigns (e.g. `["2026-03-01", "2026-05-31"]`).
+   - `target_channels`: Restrict generation to specific channels (e.g. `["Meta", "Instagram"]`).
+   - `campaign_objective`, `target_segment`, `creative_type`, `target_audience_size`, `budget_range`.
+   - `baseline_history`: Generates pre-existing RFM tenure and spend for cold-start churn analysis.
+5. **Ground-Truth Churn Modeling:** Computes `days_since_last_purchase`, `purchase_frequency`, `churn_risk_tier` (`Low | Medium | High`), `is_churned` (`bool`), and explainable `top_drivers` (e.g. `inactivity_197_days_exceeds_threshold`).
+6. **Comprehensive Statistical Validation:** Automatically calculates benchmark metric deviations, correlation sanity ($r_{\text{budget},\text{impressions}} > 0$, CPC channel order), and distribution shape analysis, returning a bounded composite `validation_score` (0.0 to 1.0).
+7. **Multiple Consumption Modes:**
+   - Importable Python module (`core.py`) returning dicts or Pandas DataFrames.
+   - HTTP REST server (`server.py`) for inter-agent network calls.
+   - CLI tool (`api.py`) for batch runs and specialized presets.
 
 ---
 
-## 🚀 Usage Guide
+## 🚀 Quickstart & Usage
 
-The `api.py` exposes a robust CLI that allows you to instantly generate exactly what you need without bloating your hard drive.
+### 1. Python Library Integration (Recommended for Agents 3, 4, 6)
 
-### 1. Basic Generation (Default)
-Generates a small dataset across all 6 verticals.
-```bash
-python api.py
+```python
+from core import generate_synthetic_data, generate_batch
+
+# Generate a targeted campaign dataset for Agent 4
+result = generate_synthetic_data(
+    industry="bfsi",
+    dataset_type="campaign_logs",
+    num_campaigns=50,
+    seed_parameters={
+        "date_range": ["2026-01-01", "2026-06-30"],
+        "target_channels": ["LinkedIn", "Google Search"]
+    },
+    output_format="dataframe"  # Returns pandas.DataFrame directly
+)
+campaigns_df = result["synthetic_dataset"]
+print(f"Validation score: {result['validation_score']:.4f}")
+print(campaigns_df.head())
+
+# Batch generate multiple verticals
+batch_results = generate_batch(
+    industries=["rcg", "travel"],
+    num_customers=200,
+    num_campaigns=20
+)
 ```
 
-### 2. Large Scale Generation
-Control exactly how many profiles and campaigns you want.
+### 2. HTTP REST Service
+
+Start the microservice:
 ```bash
-python api.py --num-customers 1000 --num-campaigns 500
+python server.py
+# Running on http://127.0.0.1:5000
 ```
 
-### 3. Vertical-Specific Generation
-Only want data for the Travel and Healthcare verticals? 
-```bash
-python api.py --industries travel healthcare --num-customers 500
-```
-
-### 4. Output Formats (JSON vs CSV)
-If your downstream Data Science teams prefer DataFrames, export to CSV.
-```bash
-python api.py --output-format csv --output-dir outputs_csv
-```
-
-### 5. Presets (Column Filtering)
-If you are generating 3,000,000 events, you don't want massive files full of columns your ML model doesn't need. Use `--preset` to automatically filter the columns for specific intern teams:
-
-* **Predictive Churn Agent:** Only outputs RFM features.
-  ```bash
-  python api.py --preset churn
+#### Endpoints:
+- `GET /health`: Liveness probe.
+- `GET /industries`: Returns supported verticals and available channels.
+- `POST /generate`: Generates synthetic data for a specified vertical.
+  ```json
+  // Request Body
+  {
+    "industry": "rcg",
+    "dataset_type": "customer_profiles",
+    "num_customers": 100,
+    "seed_parameters": {
+      "baseline_history": true
+    }
+  }
   ```
-* **Campaign Performance Agent:** Outputs only campaign objectives and stamped ML performance targets (`reach`, `impressions`, `cpm`).
-  ```bash
-  python api.py --preset campaign-performance
-  ```
-* **Channel Optimizer Agent:** Outputs only channel attribution features.
-  ```bash
-  python api.py --preset channel
-  ```
+- `POST /generate/batch`: Generates multiple verticals in parallel.
 
-### 6. The Dry Run (Schema Validation)
-Want to verify your changes haven't broken the JSON schemas, but don't want to wait for files to write to disk? Run a dry-run. It caps events to 20 per campaign and does the math purely in memory.
+### 3. CLI Tool & Intern Team Presets
+
 ```bash
-python api.py --dry-run
-```
+# Full generation across all 6 verticals
+python api.py --preset full --output-dir outputs
 
-### 7. Dynamic Overrides (Presentation Hacks)
-If you are presenting to non-technical stakeholders and want the dataset to look "artificially perfect" (e.g., packed with revenue rows), you can override the physics engine using CLI flags:
+# Agent 6 Preset: Churn features with RFM metrics
+python api.py --industries rcg --num-customers 500 --preset churn --output-dir outputs/rcg_churn
 
-* **Maximize Revenue Rows (100% CTR and 100% Conversion):**
-  Forces every person who sees the ad to click it and buy the product. The resulting CSV will have the maximum mathematical limit of revenue rows (33.3%).
-  ```bash
-  python api.py --target-ctr 1.0 --target-conversion-rate 1.0 --output-format csv
-  ```
+# Agent 4 Preset: Stamped campaign performance metrics
+python api.py --industries manufacturing --num-campaigns 100 --preset campaign-performance --output-dir outputs/mfg_performance
 
-* **Override Ad Costs (CPC):**
-  Forces every click to cost exactly ₹50, regardless of the industry benchmarks.
-  ```bash
-  python api.py --target-cpc 50
-  ```
+# Agent 3 Preset: Channel attribution & spend benchmarks
+python api.py --industries bfsi --num-campaigns 50 --preset channel --output-dir outputs/bfsi_channel
 
-### 8. Frequently Asked Questions (Cheat Sheet)
-
-**"I only want the `engagement_events` dataset. How do I generate just one?"**
-Because the physics engine relies on perfect referential integrity, it *must* generate all three files at the same time (you can't have an event without a customer or a campaign). Simply run the command to export to CSV, and just grab the specific CSV file you need from the folder! You can ignore the others.
-```bash
-python api.py --output-format csv --output-dir my_final_data
-```
-
-**"My output folder is full of JSONs and CSVs mixed together. Why?"**
-If you run the script multiple times (once for JSON, once for CSV) without changing the `--output-dir`, it will place all the files in the same default `outputs/` folder. To get a clean folder with only CSVs, tell the script to put them in a new directory:
-```bash
-python api.py --output-format csv --output-dir presentation_csvs
+# Export to CSV format for direct analysis
+python api.py --output-format csv --output-dir outputs/csv_export
 ```
 
 ---
 
-## 📊 The Generation Report
+## 🧪 Automated Test Suite
 
-Every successful run automatically writes a `generation_report.json` to your output directory. 
+Run the full 23-test regression and mathematical validation suite:
 
-This file is critical for downstream ML Engineers. It contains:
-1. The exact CLI parameters used to generate the run.
-2. The total volume of rows generated.
-3. A **Statistical Validation Report** showing the percentage deviation between the generated dataset's aggregate metrics (CTR, CPC) and the predefined industry profile targets.
+```bash
+python tests/test_referential_integrity.py
+```
+
+### Verified Test Cases:
+1. **Test 1:** Referential integrity (zero orphaned customer or campaign IDs across events).
+2. **Test 2:** LTV rollup accuracy (profile spend matches conversion event revenues).
+3. **Test 3:** JSON Schema validation against Draft-7 specifications.
+4. **Test 4:** Composite statistical validation score bounds and drift tolerances.
+5. **Test 5:** Standalone targeted dataset generation (`campaign_logs`, `customer_profiles`).
+6. **Test 6:** Generation report schema and metadata verification.
+7. **Test 7:** Seed parameters pass-through.
+8. **Test 8:** Multi-vertical batch generation.
+9. **Test 9:** Temporal bounds verification (`date_range`).
+10. **Test 10:** Channel isolation verification (`target_channels`).
+11. **Test 11:** Ground-truth churn fields existence and typing.
+12. **Test 12:** Consistency between `is_churned` and `churn_risk_tier`.
+13. **Test 13:** Never-purchased cohort high-risk assignment.
+14. **Test 14:** `churn_summary` generation report metrics.
+15. **Test 15:** Draft-7 JSON schema compliance with churn attributes.
+16. **Test 16:** Conversion event purchase frequency incrementing.
+17. **Test 17:** Campaign parameter override controls (`objective`, `segment`, `creative`).
+18. **Test 18:** Vertical churn distribution bounds (10% to 60%).
+19. **Test 19:** Statistical correlation sanity ($r_{\text{budget},\text{impressions}} > 0$).
+20. **Test 20:** Customer demographic and RFM distribution stability.
+21. **Test 21:** Complete 6-industry generation coverage.
+22. **Test 22:** HTTP REST API endpoint functionality (`/health`, `/industries`, `/generate`).
+23. **Test 23:** Output format flexibility (dict and Pandas DataFrame).
+
+---
+
+## 🛡️ Privacy & Compliance
+- **Zero Real PII:** No actual customer names, phone numbers, or credit card numbers are collected or emitted.
+- **Synthesized Tokens:** Synthetic emails adhere to `@example.com` domains.
+- **Privacy Standard:** Meets GDPR, CCPA, and DPDP requirements for synthetic data exchange across enterprise multi-agent architectures.

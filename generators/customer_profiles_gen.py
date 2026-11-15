@@ -71,10 +71,10 @@ TODAY = date(2026, 8, 20)
 
 RECENCY_CONFIG = {
     #          (min_days_ago, max_days_ago, null_probability)
-    "Enterprise": (10,  90,  0.00),   # Enterprise always active
-    "Mid-Market": (15,  180, 0.05),
-    "Consumer":   (20,  365, 0.15),
-    "Value":      (90,  730, 0.20),   # High lapse risk
+    "Enterprise": (5,   60,  0.00),   # Enterprise active accounts
+    "Mid-Market": (10,  120, 0.05),   # B2B steady accounts
+    "Consumer":   (5,   150, 0.10),   # Retail active / lapsed mix
+    "Value":      (15,  240, 0.18),   # Value-seeking, higher lapse tendency
 }
 
 
@@ -85,7 +85,7 @@ def _weighted_choice(weight_dict):
     return random.choices(keys, weights=weights, k=1)[0]
 
 
-def generate_customer_profiles(industry, volume, start_id=1):
+def generate_customer_profiles(industry, volume, start_id=1, baseline_history=True):
     """
     Generate synthetic customer profiles for a specific industry.
 
@@ -97,11 +97,12 @@ def generate_customer_profiles(industry, volume, start_id=1):
         Total number of customer records to generate.
     start_id : int
         The starting integer for customer IDs (default 1).
-
-    Each customer includes:
-    - acquisition_channel  : weighted by industry (for Channel Optimizer)
-    - total_spend_to_date  : driven by segment + vertical multiplier (Churn "M" in RFM)
-    - last_purchase_date   : driven by segment recency pattern (Churn "R" in RFM), nullable
+    baseline_history : bool
+        If True, generates realistic historical RFM baseline (spend, purchase
+        recency, and past purchase counts) based on the customer's segment and
+        industry economics. If False, initializes spend=0, purchase_frequency=0.
+        When engagement events run downstream, new conversion revenue and frequency
+        are dynamically aggregated on top.
     """
     channel_weights  = ACQUISITION_CHANNELS.get(industry, ACQUISITION_CHANNELS["rcg"])
     spend_multiplier = VERTICAL_SPEND_MULTIPLIER.get(industry, 1.0)
@@ -119,8 +120,6 @@ def generate_customer_profiles(industry, volume, start_id=1):
         gender = random.choice(GENDERS) if random.random() > 0.02 else None
 
         # --- segment: industry-weighted distribution ---
-        # Must mirror SEGMENT_WEIGHTS in campaign_logs_gen.py so campaign targeting
-        # finds the correct customer mix (avoids systematic audience mismatch).
         seg_weights = CUSTOMER_SEGMENT_WEIGHTS.get(industry, {s: 0.25 for s in SEGMENTS})
         segment = _weighted_choice(seg_weights)
 
@@ -128,27 +127,49 @@ def generate_customer_profiles(industry, volume, start_id=1):
         acquisition_channel = _weighted_choice(channel_weights)
 
         # --- signup_date: last 2 years up to TODAY ---
-        # Previous bug: was going backwards from datetime(2025,1,1), so no signups
-        # after Jan 2025 — unrealistic for an active customer database.
-        days_ago    = random.randint(0, 730)
-        signup_date = (TODAY - timedelta(days=days_ago))
+        days_ago_signup = random.randint(30, 730)
+        signup_date = (TODAY - timedelta(days=days_ago_signup))
 
-        # Initial LTV is 0. Revenue is aggregated dynamically from actual engagement events in api.py
-        total_spend = 0.0
-        last_purchase_date = None
+        # --- Baseline RFM History Generation ---
+        if baseline_history:
+            rec_conf = RECENCY_CONFIG.get(segment, (20, 365, 0.15))
+            min_days, max_days, null_prob = rec_conf
+
+            # A fraction of customers have signed up but never made a purchase
+            if random.random() < null_prob:
+                last_purchase_date = None
+                total_spend = 0.0
+                purchase_freq = 0
+            else:
+                # Last purchase must be between signup_date and today
+                max_recency = min(max_days, days_ago_signup)
+                min_recency = min(min_days, max_recency)
+                days_since_purchase = random.randint(min_recency, max_recency)
+                last_purchase_date = (TODAY - timedelta(days=days_since_purchase)).isoformat()
+
+                # Spend driven by segment range and vertical multiplier
+                lo_spend, hi_spend = SPEND_BY_SEGMENT.get(segment, (1000, 20000))
+                raw_spend = random.uniform(lo_spend, hi_spend) * spend_multiplier
+                total_spend = round(raw_spend, 2)
+                purchase_freq = random.randint(1, 6)
+        else:
+            total_spend = 0.0
+            last_purchase_date = None
+            purchase_freq = 0
 
         customers.append({
-            "customer_id": customer_id,
-            "industry": industry,
-            "acquisition_channel": acquisition_channel,
-            "name": name,
-            "email": email,
-            "age": age,
-            "gender": gender,
-            "segment": segment,
-            "signup_date": signup_date.isoformat(),
-            "total_spend_to_date": total_spend,
-            "last_purchase_date": last_purchase_date,
+            "customer_id":          customer_id,
+            "industry":             industry,
+            "acquisition_channel":  acquisition_channel,
+            "name":                 name,
+            "email":                email,
+            "age":                  age,
+            "gender":               gender,
+            "segment":              segment,
+            "signup_date":          signup_date.isoformat(),
+            "total_spend_to_date":  total_spend,
+            "last_purchase_date":   last_purchase_date,
+            "purchase_frequency":   purchase_freq,
         })
 
     return customers

@@ -64,9 +64,9 @@ def generate_engagement_events(campaigns, customers, profiles, rules, max_events
 
         # ---------------------------------------------------------------
         # Proportional sampling (cap at max_events_per_campaign).
-        # Stochastic rounding: avoids ceiling bias for rare-event verticals
-        # (e.g. Manufacturing CR=1%). A fractional expectation of 0.55
-        # resolves to 1 with 55% probability and 0 with 45% — unbiased.
+        # Stochastic rounding: avoids ceiling bias for rare-event verticals.
+        # A fractional expectation of 0.55 resolves to 1 with 55% probability
+        # and 0 with 45% — guaranteeing mathematically unbiased benchmark convergence.
         # ---------------------------------------------------------------
         if total_events_intended > max_events_per_campaign:
             ratio = max_events_per_campaign / total_events_intended

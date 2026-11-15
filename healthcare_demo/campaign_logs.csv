@@ -1,0 +1,13 @@
+campaign_id,campaign_name,industry,budget,start_date,end_date,status,target_channel,campaign_objective,target_segment,creative_type,target_audience_size,reach,impressions,clicks,conversions,leads,spend,cpm,cpl
+CAMP-00001,HEALTHCARE_NewYear_Boost_CAMP-00001,healthcare,201519.95,2026-10-24,2026-12-18,Paused,Meta,Brand Awareness,Mid-Market,Image,9128497,276091,276091,5095,36,3,201512.17,729.88,5597.56
+CAMP-00002,HEALTHCARE_Targeted_Conversion_CAMP-00002,healthcare,51301.36,2026-04-19,2026-05-28,Completed,Google Search,Brand Awareness,Consumer,Video,2588302,8452,8452,362,2,0,44810.61,5301.78,22405.31
+CAMP-00003,HEALTHCARE_Summer_Awareness_CAMP-00003,healthcare,284376.21,2026-07-26,2026-09-10,Active,Google Display,Lead Generation,Consumer,Video,3846730,829003,829003,7862,126,126,284376.21,343.03,2256.95
+CAMP-00004,HEALTHCARE_Festive_Acquisition_CAMP-00004,healthcare,62804.07,2026-07-31,2026-08-15,Completed,Meta,Brand Awareness,Consumer,Image,8670369,68686,68686,1447,7,1,62804.07,914.36,8972.01
+CAMP-00005,HEALTHCARE_Premium_Reactivation_CAMP-00005,healthcare,70840.52,2026-02-15,2026-03-27,Completed,YouTube,Lead Generation,Consumer,Image,1053534,112074,112074,744,10,10,70840.52,632.09,7084.05
+CAMP-00006,HEALTHCARE_Flash_Acquisition_CAMP-00006,healthcare,86128.1,2026-03-30,2026-05-16,Completed,Meta,Retention,Value,Video,8745534,48085,48085,1578,28,2,78947.97,1641.84,2819.57
+CAMP-00007,HEALTHCARE_Peak_Pipeline_CAMP-00007,healthcare,228203.07,2026-04-16,2026-05-06,Completed,Meta,Conversion,Consumer,Image,860407,146911,146911,3491,88,12,199670.63,1359.13,2268.98
+CAMP-00008,HEALTHCARE_Monsoon_Branding_CAMP-00008,healthcare,73513.63,2026-02-02,2026-03-20,Completed,YouTube,Lead Generation,Consumer,Carousel,7416884,83151,83151,734,11,11,73513.63,884.1,6683.06
+CAMP-00009,HEALTHCARE_Peak_Retention_CAMP-00009,healthcare,116903.01,2026-06-17,2026-07-13,Completed,Google Search,Lead Generation,Consumer,Carousel,2209381,15797,15797,765,24,24,116903.01,7400.33,4870.96
+CAMP-00010,HEALTHCARE_TaxSeason_Reactivation_CAMP-00010,healthcare,266584.17,2026-02-21,2026-03-16,Completed,Meta,Conversion,Mid-Market,Image,848364,151490,151490,3426,100,10,266584.17,1759.75,2665.84
+CAMP-00011,HEALTHCARE_Spring_Conversion_CAMP-00011,healthcare,72710.41,2026-04-26,2026-05-17,Completed,Meta,Brand Awareness,Consumer,Image,8095881,72950,72950,1518,7,0,63589.07,871.68,9084.15
+CAMP-00012,HEALTHCARE_NewYear_Branding_CAMP-00012,healthcare,255242.79,2026-09-22,2026-11-02,Paused,YouTube,Brand Awareness,Value,Video,1849295,535438,535438,4089,10,1,250961.11,468.7,25096.11
