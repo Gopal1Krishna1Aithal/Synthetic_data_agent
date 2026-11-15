@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketing Intelligence Suite - Synthetic Data Agent</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+  <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-slate-900">Synthetic Data Creation Agent (Agent 2)</h1>
+      <p class="text-xs text-slate-500">Autonomous Marketing Intelligence Suite | Privacy-Safe PII-Free Generator</p>
+    </div>
+    <div class="flex items-center space-x-3">
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800" id="api-status">
+        Backend Connected
+      </span>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Left Configuration Panel -->
+    <div class="lg:col-span-4 bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-5">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Data Generation Controls</h2>
+      
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Industry Vertical</label>
+        <select id="industry-select" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+          <option value="rcg">RCG (Retail / Consumer Goods)</option>
+          <option value="bfsi">BFSI (Banking & Financial Services)</option>
+          <option value="healthcare">Healthcare</option>
+          <option value="insurance">Insurance</option>
+          <option value="manufacturing">Manufacturing</option>
+          <option value="travel">Travel & Hospitality</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Customers</label>
+          <input type="number" id="num-customers" value="50" min="5" max="1000" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Campaigns</label>
+          <input type="number" id="num-campaigns" value="5" min="1" max="100" class="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Target Downstream Preset</label>
+        <div class="grid grid-cols-1 gap-2">
+          <button type="button" onclick="applyPreset('churn')" class="text-left text-xs border border-slate-200 rounded px-3 py-2 hover:bg-slate-50 transition">
+            <span class="font-semibold block text-slate-800">Agent 6: Predictive Churn</span>
+            <span class="text-slate-500 text-[11px]">Includes RFM metrics, churn risk tier, and explainable top drivers.</span>
+          </button>
+          <button type="button" onclick="applyPreset('performance')" class="text-left text-xs border border-slate-200 rounded px-3 py-2 hover:bg-slate-50 transition">
+            <span class="font-semibold block text-slate-800">Agent 4: Campaign Predictor</span>
+            <span class="text-slate-500 text-[11px]">Includes stamped reach, impressions, spend, CPM, and CPL.</span>
+          </button>
+          <button type="button" onclick="applyPreset('channel')" class="text-left text-xs border border-slate-200 rounded px-3 py-2 hover:bg-slate-50 transition">
+            <span class="font-semibold block text-slate-800">Agent 3: Budget Allocator</span>
+            <span class="text-slate-500 text-[11px]">Includes channel attribution, benchmark CPC, and diminishing returns.</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button id="btn-generate" onclick="generateData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded text-sm transition flex items-center justify-center">
+          <span id="btn-text">Generate Synthetic Data</span>
+          <svg id="btn-spinner" class="animate-spin ml-2 h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="border-t border-slate-200 pt-3">
+        <div class="text-xs text-slate-500 space-y-1">
+          <p><span class="font-semibold text-slate-700">Privacy Compliance:</span> 100% PII-Free Synthetic Tokens</p>
+          <p><span class="font-semibold text-slate-700">Integrity:</span> Zero orphan foreign keys</p>
+          <p><span class="font-semibold text-slate-700">Schemas:</span> Draft-7 validated</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Presentation Panel -->
+    <div class="lg:col-span-8 space-y-6">
+      <!-- Validation Summary Bar -->
+      <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+          <div>
+            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500">Quality & Statistical Validation</h3>
+            <p class="text-xs text-slate-500">Comparison against empirical industry benchmarks and correlation physics</p>
+          </div>
+          <div class="text-right">
+            <span class="text-2xl font-bold text-slate-900" id="val-score">--</span>
+            <span class="block text-[11px] font-medium text-slate-500" id="val-status">Awaiting generation</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="stats-summary">
+          <div class="bg-slate-50 rounded p-3 border border-slate-100">
+            <div class="text-xs text-slate-500 font-medium">Click-Through Rate (CTR)</div>
+            <div class="text-sm font-semibold mt-1" id="stat-ctr">--</div>
+          </div>
+          <div class="bg-slate-50 rounded p-3 border border-slate-100">
+            <div class="text-xs text-slate-500 font-medium">Cost Per Click (CPC)</div>
+            <div class="text-sm font-semibold mt-1" id="stat-cpc">--</div>
+          </div>
+          <div class="bg-slate-50 rounded p-3 border border-slate-100">
+            <div class="text-xs text-slate-500 font-medium">Conversion Rate (CVR)</div>
+            <div class="text-sm font-semibold mt-1" id="stat-cvr">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dataset Explorer Tabs -->
+      <div class="bg-white border border-slate-200 rounded-lg shadow-sm">
+        <div class="border-b border-slate-200 px-5 flex items-center justify-between">
+          <div class="flex space-x-6 text-sm">
+            <button class="py-3 tab-active" id="tab-cust" onclick="switchTab('customers')">Customer Profiles (<span id="count-cust">0</span>)</button>
+            <button class="py-3 text-slate-500 hover:text-slate-800" id="tab-camp" onclick="switchTab('campaigns')">Campaign Logs (<span id="count-camp">0</span>)</button>
+            <button class="py-3 text-slate-500 hover:text-slate-800" id="tab-events" onclick="switchTab('events')">Engagement Events (<span id="count-events">0</span>)</button>
+          </div>
+          <div class="flex space-x-2 py-2">
+            <button onclick="downloadActiveDataset('json')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded border border-slate-300 font-medium">Download JSON</button>
+            <button onclick="downloadActiveDataset('csv')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded border border-slate-300 font-medium">Download CSV</button>
+          </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="p-4 overflow-x-auto max-h-96">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 font-semibold" id="table-head">
+              <tr><th class="p-2">Ready to generate data</th></tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-mono text-[11px]" id="table-body">
+              <tr><td class="p-4 text-slate-400 text-center font-sans">Select options on the left and click "Generate Synthetic Data".</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let currentData = {
+      customer_profiles: [],
+      campaign_logs: [],
+      engagement_events: []
+    };
+    let activeTab = 'customers';
+
+    function applyPreset(preset) {
+      if (preset === 'churn') {
+        document.getElementById('industry-select').value = 'rcg';
+        document.getElementById('num-customers').value = 100;
+        document.getElementById('num-campaigns').value = 5;
+      } else if (preset === 'performance') {
+        document.getElementById('industry-select').value = 'manufacturing';
+        document.getElementById('num-customers').value = 30;
+        document.getElementById('num-campaigns').value = 15;
+      } else if (preset === 'channel') {
+        document.getElementById('industry-select').value = 'bfsi';
+        document.getElementById('num-customers').value = 50;
+        document.getElementById('num-campaigns').value = 10;
+      }
+    }
+
+    async function generateData() {
+      const btn = document.getElementById('btn-generate');
+      const text = document.getElementById('btn-text');
+      const spinner = document.getElementById('btn-spinner');
+      
+      btn.disabled = true;
+      text.innerText = 'Generating...';
+      spinner.classList.remove('hidden');
+
+      const industry = document.getElementById('industry-select').value;
+      const numCustomers = parseInt(document.getElementById('num-customers').value, 10);
+      const numCampaigns = parseInt(document.getElementById('num-campaigns').value, 10);
+
+      try {
+        const response = await fetch('/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            industry: industry,
+            dataset_type: 'all',
+            num_customers: numCustomers,
+            num_campaigns: numCampaigns
+          })
+        });
+
+        const res = await response.json();
+        if (res.status === 'success') {
+          currentData = res.synthetic_dataset;
+          updateValidationScore(res.validation_score, res.generation_report);
+          updateCounts();
+          renderActiveTable();
+        } else {
+          alert('Generation error: ' + (res.message || 'Unknown'));
+        }
+      } catch (err) {
+        alert('Failed to connect to backend: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        text.innerText = 'Generate Synthetic Data';
+        spinner.classList.add('hidden');
+      }
+    }
+
+    function updateValidationScore(score, report) {
+      const valScoreEl = document.getElementById('val-score');
+      const valStatusEl = document.getElementById('val-status');
+      const pct = (score * 100).toFixed(1);
+      valScoreEl.innerText = pct + '%';
+      
+      if (score >= 0.75) {
+        valScoreEl.className = 'text-2xl font-bold text-emerald-600';
+        valStatusEl.innerText = 'High Quality (Physics & Schemas Verified)';
+        valStatusEl.className = 'block text-[11px] font-medium text-emerald-600';
+      } else {
+        valScoreEl.className = 'text-2xl font-bold text-amber-600';
+        valStatusEl.innerText = 'Acceptable Bounds';
+        valStatusEl.className = 'block text-[11px] font-medium text-amber-600';
+      }
+
+      if (report && report.statistical_validation) {
+        const val = report.statistical_validation;
+        const ctr = val.ctr || {};
+        const cpc = val.cpc || {};
+        const cvr = val.conversion_rate || {};
+
+        document.getElementById('stat-ctr').innerHTML = `Target: ${(ctr.target * 100 || 0).toFixed(2)}% | Actual: ${(ctr.actual * 100 || 0).toFixed(2)}% <span class="text-xs text-slate-500">(${ctr.deviation_pct?.toFixed(1) || 0}% dev)</span>`;
+        document.getElementById('stat-cpc').innerHTML = `Target: ₹${(cpc.target || 0).toFixed(0)} | Actual: ₹${(cpc.actual || 0).toFixed(1)} <span class="text-xs text-slate-500">(${cpc.deviation_pct?.toFixed(1) || 0}% dev)</span>`;
+        document.getElementById('stat-cvr').innerHTML = `Target: ${(cvr.target * 100 || 0).toFixed(2)}% | Actual: ${(cvr.actual * 100 || 0).toFixed(2)}% <span class="text-xs text-slate-500">(${cvr.deviation_pct?.toFixed(1) || 0}% dev)</span>`;
+      }
+    }
+
+    function updateCounts() {
+      document.getElementById('count-cust').innerText = currentData.customer_profiles ? currentData.customer_profiles.length : 0;
+      document.getElementById('count-camp').innerText = currentData.campaign_logs ? currentData.campaign_logs.length : 0;
+      document.getElementById('count-events').innerText = currentData.engagement_events ? currentData.engagement_events.length : 0;
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      ['cust', 'camp', 'events'].forEach(t => {
+        document.getElementById('tab-' + t).className = 'py-3 text-slate-500 hover:text-slate-800';
+      });
+      if (tab === 'customers') document.getElementById('tab-cust').className = 'py-3 tab-active';
+      if (tab === 'campaigns') document.getElementById('tab-camp').className = 'py-3 tab-active';
+      if (tab === 'events') document.getElementById('tab-events').className = 'py-3 tab-active';
+      renderActiveTable();
+    }
+
+    function renderActiveTable() {
+      const head = document.getElementById('table-head');
+      const body = document.getElementById('table-body');
+      
+      let rows = [];
+      let columns = [];
+
+      if (activeTab === 'customers') {
+        rows = currentData.customer_profiles || [];
+        columns = ['customer_id', 'segment', 'acquisition_channel', 'total_spend_to_date', 'purchase_frequency', 'days_since_last_purchase', 'churn_risk_tier', 'is_churned'];
+      } else if (activeTab === 'campaigns') {
+        rows = currentData.campaign_logs || [];
+        columns = ['campaign_id', 'channel', 'campaign_objective', 'target_segment', 'budget', 'spend', 'reach', 'impressions', 'conversions'];
+      } else {
+        rows = currentData.engagement_events || [];
+        columns = ['event_id', 'campaign_id', 'customer_id', 'event_type', 'timestamp', 'channel', 'revenue'];
+      }
+
+      if (rows.length === 0) {
+        head.innerHTML = '<tr><th class="p-2">No records</th></tr>';
+        body.innerHTML = '<tr><td class="p-4 text-slate-400 text-center font-sans">No records found. Click "Generate Synthetic Data".</td></tr>';
+        return;
+      }
+
+      let headHtml = '<tr>';
+      columns.forEach(c => { headHtml += `<th class="p-2 border-b border-slate-200 capitalize">${c.replace(/_/g, ' ')}</th>`; });
+      headHtml += '</tr>';
+      head.innerHTML = headHtml;
+
+      const previewRows = rows.slice(0, 25);
+      let bodyHtml = '';
+      previewRows.forEach(r => {
+        bodyHtml += '<tr class="hover:bg-slate-50">';
+        columns.forEach(c => {
+          let val = r[c];
+          if (c === 'churn_risk_tier') {
+            const badgeClass = val === 'High' ? 'bg-rose-100 text-rose-800' : (val === 'Medium' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800');
+            val = `<span class="px-2 py-0.5 rounded text-[10px] font-semibold ${badgeClass}">${val}</span>`;
+          } else if (c === 'is_churned') {
+            val = val ? '<span class="text-rose-600 font-semibold">True</span>' : '<span class="text-emerald-600">False</span>';
+          } else if (typeof val === 'number') {
+            val = Number.isInteger(val) ? val : val.toFixed(2);
+          } else if (val === null || val === undefined) {
+            val = '<span class="text-slate-300">null</span>';
+          }
+          bodyHtml += `<td class="p-2 border-b border-slate-100">${val}</td>`;
+        });
+        bodyHtml += '</tr>';
+      });
+      body.innerHTML = bodyHtml;
+    }
+
+    function downloadActiveDataset(format) {
+      let data = [];
+      let filename = 'dataset';
+      if (activeTab === 'customers') { data = currentData.customer_profiles; filename = 'customer_profiles'; }
+      else if (activeTab === 'campaigns') { data = currentData.campaign_logs; filename = 'campaign_logs'; }
+      else { data = currentData.engagement_events; filename = 'engagement_events'; }
+
+      if (!data || data.length === 0) {
+        alert('Please generate data first.');
+        return;
+      }
+
+      let content = '';
+      let mimeType = '';
+      if (format === 'json') {
+        content = JSON.stringify(data, null, 2);
+        mimeType = 'application/json';
+        filename += '.json';
+      } else {
+        const keys = Object.keys(data[0]);
+        const header = keys.join(',');
+        const rows = data.map(item => keys.map(k => {
+          let val = item[k];
+          if (Array.isArray(val)) val = val.join(';');
+          return `"${String(val ?? '').replace(/"/g, '""')}"`;
+        }).join(','));
+        content = [header, ...rows].join('\n');
+        mimeType = 'text/csv';
+        filename += '.csv';
+      }
+
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

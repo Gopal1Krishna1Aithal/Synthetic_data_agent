@@ -29,7 +29,7 @@ import json
 from core import generate_synthetic_data, generate_batch, VALID_INDUSTRIES, _load_configs
 
 try:
-    from flask import Flask, request, jsonify
+    from flask import Flask, request, jsonify, render_template
     HAS_FLASK = True
 except ImportError:
     HAS_FLASK = False
@@ -50,6 +50,12 @@ def create_flask_app():
 
     @app.route("/", methods=["GET"])
     def root():
+        # If requested by a web browser, serve the interactive UI
+        if "text/html" in request.headers.get("Accept", "") and request.args.get("format") != "json":
+            try:
+                return render_template("index.html")
+            except Exception:
+                pass
         return jsonify({
             "agent": "Agent 2 — Synthetic Data Creation Agent",
             "status": "running",
@@ -59,6 +65,7 @@ def create_flask_app():
                 "customer_profiles", "campaign_logs", "engagement_events", "all"
             ],
             "endpoints": {
+                "GET  /":               "Interactive Web Dashboard (browser) or API overview (json)",
                 "GET  /health":         "Health check",
                 "GET  /industries":     "List supported industries and benchmarks",
                 "POST /generate":       "Generate single industry dataset",
