@@ -276,22 +276,36 @@
         valStatusEl.className = 'block text-[11px] font-medium text-amber-600';
       }
 
-      if (report && report.statistical_validation) {
-        let stats = report.statistical_validation;
-        if (Array.isArray(stats) && stats.length > 0) {
-          stats = stats[0].metrics || stats[0] || {};
+      if (report) {
+        let stats = {};
+        if (Array.isArray(report.statistical_validation) && report.statistical_validation.length > 0) {
+          stats = report.statistical_validation[0].metrics || report.statistical_validation[0] || {};
+        } else if (report.statistical_validation && typeof report.statistical_validation === 'object') {
+          stats = report.statistical_validation.metrics || report.statistical_validation || {};
+        } else if (report.validation_details && report.validation_details.benchmark_metrics) {
+          const bm = report.validation_details.benchmark_metrics;
+          stats = (Array.isArray(bm) && bm.length > 0) ? (bm[0].metrics || bm[0]) : bm;
         }
+
         const ctr = stats.ctr || {};
         const cpc = stats.cpc || {};
         const cvr = stats.conversion_rate || {};
 
-        const ctrDev = (ctr.deviation !== undefined ? ctr.deviation * 100 : (ctr.deviation_pct || 0)).toFixed(1);
-        const cpcDev = (cpc.deviation !== undefined ? cpc.deviation * 100 : (cpc.deviation_pct || 0)).toFixed(1);
-        const cvrDev = (cvr.deviation !== undefined ? cvr.deviation * 100 : (cvr.deviation_pct || 0)).toFixed(1);
+        const ctrTarget = typeof ctr.target === 'number' ? (ctr.target * 100).toFixed(2) : '0.00';
+        const ctrActual = typeof ctr.actual === 'number' ? (ctr.actual * 100).toFixed(2) : '0.00';
+        const ctrDev = typeof ctr.deviation === 'number' ? (ctr.deviation * 100).toFixed(1) : (ctr.deviation_pct ? ctr.deviation_pct.toFixed(1) : '0.0');
 
-        document.getElementById('stat-ctr').innerHTML = `Target: ${((ctr.target || 0) * 100).toFixed(2)}% | Actual: ${((ctr.actual || 0) * 100).toFixed(2)}% <span class="text-xs text-slate-500">(${ctrDev}% dev)</span>`;
-        document.getElementById('stat-cpc').innerHTML = `Target: ₹${(cpc.target || 0).toFixed(0)} | Actual: ₹${(cpc.actual || 0).toFixed(1)} <span class="text-xs text-slate-500">(${cpcDev}% dev)</span>`;
-        document.getElementById('stat-cvr').innerHTML = `Target: ${((cvr.target || 0) * 100).toFixed(2)}% | Actual: ${((cvr.actual || 0) * 100).toFixed(2)}% <span class="text-xs text-slate-500">(${cvrDev}% dev)</span>`;
+        const cpcTarget = typeof cpc.target === 'number' ? Math.round(cpc.target) : 0;
+        const cpcActual = typeof cpc.actual === 'number' ? cpc.actual.toFixed(1) : '0.0';
+        const cpcDev = typeof cpc.deviation === 'number' ? (cpc.deviation * 100).toFixed(1) : (cpc.deviation_pct ? cpc.deviation_pct.toFixed(1) : '0.0');
+
+        const cvrTarget = typeof cvr.target === 'number' ? (cvr.target * 100).toFixed(2) : '0.00';
+        const cvrActual = typeof cvr.actual === 'number' ? (cvr.actual * 100).toFixed(2) : '0.00';
+        const cvrDev = typeof cvr.deviation === 'number' ? (cvr.deviation * 100).toFixed(1) : (cvr.deviation_pct ? cvr.deviation_pct.toFixed(1) : '0.0');
+
+        document.getElementById('stat-ctr').innerHTML = `Target: ${ctrTarget}% | Actual: ${ctrActual}% <span class="text-xs text-slate-500">(${ctrDev}% dev)</span>`;
+        document.getElementById('stat-cpc').innerHTML = `Target: ₹${cpcTarget} | Actual: ₹${cpcActual} <span class="text-xs text-slate-500">(${cpcDev}% dev)</span>`;
+        document.getElementById('stat-cvr').innerHTML = `Target: ${cvrTarget}% | Actual: ${cvrActual}% <span class="text-xs text-slate-500">(${cvrDev}% dev)</span>`;
       }
     }
 
